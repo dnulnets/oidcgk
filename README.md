@@ -24,6 +24,9 @@ Currently there are two different backend storages implemented:
 ### Endpoints
 
 #### /oidc/login
+This is the login endpoint, if the browser has no valid cookies it will redirect the browser to the login endpoint of the OIDC provider so the user can login. Upon successfull login the provider will redirect the browser to the **/oidc/callback** endpoint.
+
+It has one parameter, **redirect_uri** which is optional. It allows you to specify which URL to redirect the browser upon successful code to authentication token exchange. If omitted it will use the **oidcgk.application.url** property as the destination of the redirect.
 #### /oidc/callback
 #### /oidc/logout
 #### /*
@@ -37,6 +40,7 @@ The following versions are used for runtime, development and testing. It might w
 ### Things to add or do
 * Performance tuning and deployment scenarios.
 * Add and option for fine grained authorization in the same ways as [Authz](https://github.com/dnulnets/authz)
+* Only allow som especified redirect_uri:s.
 
 ## Kubernetes setup
 
