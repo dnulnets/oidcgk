@@ -55,12 +55,12 @@ The following versions are used for runtime, development and testing. It might w
 ## Kubernetes setup
 
 ### External extension provider
-Istio has to be configured with the extension provider to be able to use it as a CUSTOM action.
+Istio has to be configured to use the gatekeeper as the extension provider to be able to use it as a CUSTOM action in the AuthorizationPolicy.
 
 ```
 kubectl edit configmap istio -n istio-system
 ```
-Add the extension provider as shown below and make sure to include the headers both up and down stream to ensure the correct cookie and authorization handling.
+Add the gatekeeper as the extension provider shown below and make sure to include the headers for both up and down stream to ensure the correct cookie and authorization handling.
 ```
 data:
   mesh: |-
@@ -86,7 +86,7 @@ data:
 ```
 
 ### Example AuthorizationPolicy
-This example shows how to use an authorization policy for the "app" **simple**. You want to protect it using a CUSTOM action that specifies the previous added extension provider to use for authorization. The provider has to be set up in advance. See previous chapter.
+This example shows how to use an authorization policy for the "app" **simple**. You want to protect it using a CUSTOM action that specifies the previous added extension provider to use for authorization.
 ```
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
@@ -105,10 +105,8 @@ spec:
         paths: ["*"]
 ```
 
-## Deployment of the extension provider
-
-## Setup in keycloak
-
+## Deployment of the gatekeeper
+### Configuring the gatekeeper
 ## How to build it
 ### Building the docker image
 It is published on docker hub as dnulnets/oidcgk, but if you want to build it on your own it can be done with the following command.
