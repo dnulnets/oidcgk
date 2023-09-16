@@ -1,6 +1,8 @@
 # OpenID Connect Gatekeeper for Istio
 This project creates a standalone OpenId Connect Gatekeeper that will handle login, logout to an OIDC provider and protect certain routes via an istio extension provider. The gatekeeper acts as a confidential client and handles code exchange and token refresh automatically. The session information is kept either in an encrypted secure HTTP-only cookie or in a memory or encrypted redis storage at the backend. The istio extension provider will verify the token and send the access token upstream to the destination.
 
+It can protect any type of server side resources, such as API:s, static webpages and can also be used by SPA:s to make it simpler to handle authentication and authorization.
+
 **NOTE!** This is work in progress and have some thing that needs to be done and quirks to solve before it is production ready. But it is fully functional for experimental use for now.
 
 ## Introduction
