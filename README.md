@@ -13,13 +13,20 @@ It also provides three endpoints for logging in, callback from the login and log
 ### The use of cookies and backend storage
 It relies on the use of secure HTTP-only cookies and it uses them in two different ways depending on what kind of storage of the session information that is selected.
 #### Browser storage
-In browser storage mode, the entire session information is encrypted, using the gatekeepers encryption key, and stored in the cookies. No backend storage is used. The drawback of this is that the messages between the browser and the backend can be really big.
+In browser storage mode, the entire session information is encrypted, using the gatekeepers encryption key, and stored in the cookies. No backend storage is used.
+* The drawback is that the requests from the browser can be really big.
+* The advantage is that you will need no backend storage and you can easily load balance between multiple gatekeepers.
 #### Backend storage
-In backend storage mode, a session identifier and the backend storage encryption key is stored in the cookies. The actual session information is encrypted, using the browser side backend storage encryption key, and stored in the backend. The advantage is that the size of the messages between the browser and the backend will be as small as possible.
+In backend storage mode, a session identifier and the backend storage encryption key is stored in the cookies. The actual session information is encrypted, using the browser side backend storage encryption key, and stored in the backend. 
+* The advantage is that the size of the requst from the browser will be small.
 
 Currently there are two different backend storages implemented:
-* **memory**, which do not require any external storage. The drawback is that the sessions will not survive a restart of the server and if using more than one server you need to use sticky sessions.
-* **redis**, which requires an external Redis-server. The advantage here is that the sessions will survive a restart.
+* **memory**, which do not require any external storage.
+  * The drawback is that the sessions will not survive a restart of the server and if using more than one gatekeeper to load balance between you need to use sticky sessions.
+  * The advantage is that it is easily configured for the backend.
+* **redis**, which requires an external Redis-server.
+  * The drawback is that it is a more cumbersome to set up.
+  * The advantage is that the sessions will survive a restart.
 
 ### Endpoints
 
