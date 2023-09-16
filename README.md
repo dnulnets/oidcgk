@@ -23,9 +23,9 @@ Currently there are two different backend storages implemented:
 
 ### Endpoints
 
-#### /oidc/login
-#### /oidc/callback
-#### /oidc/logout
+#### /oidc/login[?redirect_uri=<uri>]
+#### /oidc/callback?state=<state>&code=<code>&session_state=<session state>
+#### /oidc/logout[?redirect_uri=<uri>]
 #### /*
 
 ### Runtime and development versions
