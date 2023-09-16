@@ -31,11 +31,11 @@ Currently there are two different backend storages implemented:
 ### Endpoints
 
 #### /oidc/login
-This is the login endpoint that is used whenever an application wants to authenticate the user. If the browser has no valid cookies the server will redirect the browser to the login endpoint of the OIDC provider. Upon successfull login the provider will redirect the browser back to the **/oidc/callback** endpoint.
+This is the login endpoint that is used whenever an application wants to authenticate the user. If the browser has no valid cookies the gatekeeper will redirect the browser to the login endpoint of the OIDC provider. Upon successfull login the provider will redirect the browser back to the **/oidc/callback** endpoint at the gatekeeper.
 
-It has one parameter, **redirect_uri** which is optional. It allows you to specify which URL to redirect the browser upon successful code to authentication token exchange. If omitted it will use the **oidcgk.application.url** property as the destination of the redirect.
+It has one parameter, **redirect_uri** which is optional. It allows you to specify which URL to redirect the browser upon successful code to authentication token exchange. If omitted the gatekeeper will use the **oidcgk.application.url** property as the destination of the redirect.
 #### /oidc/callback
-When the user has successfully logged in at the OIDC provider it will redirect the browser to this endpoint where the server can exchange the code to an authorization token and create the complete session information.
+When the user has successfully logged in at the OIDC provider it will redirect the browser to this endpoint where the gatekeeper can exchange the code to an authorization token and create the complete session information.
 #### /oidc/logout
 This endpoint logs out the user.
 #### /*
