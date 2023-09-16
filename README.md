@@ -11,19 +11,21 @@ It is used by istios authorization policy as a CUSTOM action and acts as a confi
 It also provides three endpoints for logging in, callback from the login and logout. It handles the OIDC providers interface and creates the cookies and backend storage of the session information.
 
 ### The use of cookies and backend storage
-It relies on the use of secure HTTP-only cookies and it uses it in two different ways depending on what kind of storage of the session information is selected.
+It relies on the use of secure HTTP-only cookies and it uses them in two different ways depending on what kind of storage of the session information that is selected.
 #### Browser storage
 In browser storage mode, the entire session information is encrypted, using the gatekeepers encryption key, and stored in the cookies. No backend storage is used. The drawback of this is that the messages between the browser and the backend can be really big.
 #### Backend storage
 In backend storage mode, a session identifier and the backend storage encryption key is stored in the cookies. The actual session information is encrypted, using the browser side backend storage encryption key, and stored in the backend. The advantage is that the size of the messages between the browser and the backend will be as small as possible.
 
 Currently there are two different backend storages implemented:
-* **memory**, which do not require any external storage. The drawback is that the backend will drop all sessions on a restart of the server and if using more than one server you need to use sticky sessions.
+* **memory**, which do not require any external storage. The drawback is that the sessions will not survive a restart of the server and if using more than one server you need to use sticky sessions.
 * **redis**, which requires an external Redis-server. The advantage here is that the sessions will survive a restart.
+
+### Endpoints
 
 ### Runtime and development versions
 The following versions are used for runtime, development and testing. It might work perfectly fine with other versions as well but it has not been verified.
-* Keycloak 21.1.1 (keycloak-authz-client, keycloak-core)
+* Keycloak 21.1.1 (keycloak-athz-client, keycloak-core)
 * Istio 1.17.2/1.18.2
 * Quarkus 3.2.0
 
