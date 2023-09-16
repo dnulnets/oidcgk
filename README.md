@@ -23,6 +23,11 @@ Currently there are two different backend storages implemented:
 
 ### Endpoints
 
+#### /oidc/login
+#### /oidc/callback
+#### /oidc/logout
+#### /*
+
 ### Runtime and development versions
 The following versions are used for runtime, development and testing. It might work perfectly fine with other versions as well but it has not been verified.
 * Keycloak 21.1.1 (keycloak-athz-client, keycloak-core)
