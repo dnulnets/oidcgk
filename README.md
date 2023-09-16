@@ -24,12 +24,15 @@ Currently there are two different backend storages implemented:
 ### Endpoints
 
 #### /oidc/login
-This is the login endpoint, if the browser has no valid cookies it will redirect the browser to the login endpoint of the OIDC provider so the user can login. Upon successfull login the provider will redirect the browser to the **/oidc/callback** endpoint.
+This is the login endpoint that is used whenever an application wants to authenticate the user. If the browser has no valid cookies the server will redirect the browser to the login endpoint of the OIDC provider. Upon successfull login the provider will redirect the browser back to the **/oidc/callback** endpoint.
 
 It has one parameter, **redirect_uri** which is optional. It allows you to specify which URL to redirect the browser upon successful code to authentication token exchange. If omitted it will use the **oidcgk.application.url** property as the destination of the redirect.
 #### /oidc/callback
+When the user has successfully logged in at the OIDC provider it will redirect the browser to this endpoint where the server can exchange the code to an authorization token and create the complete session information.
 #### /oidc/logout
+This endpoint logs out the user.
 #### /*
+This endpoint is used by the istio authroization extension to verify the session information before allowing the call to go through to the actual endpoint.
 
 ### Runtime and development versions
 The following versions are used for runtime, development and testing. It might work perfectly fine with other versions as well but it has not been verified.
@@ -40,7 +43,7 @@ The following versions are used for runtime, development and testing. It might w
 ### Things to add or do
 * Performance tuning and deployment scenarios.
 * Add and option for fine grained authorization in the same ways as [Authz](https://github.com/dnulnets/authz)
-* Only allow som especified redirect_uri:s.
+* Remove the redirect_uri parameter for the /oidc/login endpoint.
 
 ## Kubernetes setup
 
