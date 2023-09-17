@@ -1,24 +1,27 @@
 # OpenID Connect Gatekeeper for Istio
 This project creates a standalone OpenId Connect Gatekeeper that will handle login, logout to an OIDC provider and protect certain routes
-as an extension provider to istio. The gatekeeper acts as a confidential client and handles code exchange and token refresh automatically. The session information is kept either in an encrypted secure HTTP-only cookie or in a memory or encrypted redis storage at the backend. The istio extension provider will verify the token and send the access token upstream to the destination.
+as an extension provider to istio. The gatekeeper acts as a confidential client and uses the authorization code flow. It handles code exchange and token refresh automatically. The session information is kept either in an encrypted secure HTTP-only cookie or in a memory or encrypted redis storage at the backend. The istio extension provider will verify the token and send the access token upstream to the destination.
 
 It can protect any type of server side resources, such as API:s, static webpages and can also be used by SPA:s to make it simpler to handle authentication and authorization.
 
 **NOTE!** This is work in progress and have some thing that needs to be done and quirks to solve before it is production ready. But it is fully functional for experimental use for now.
 
 ## Introduction
-It is used by istios authorization policy as a CUSTOM action and acts as a confidential client. For each HTTP request it looks up the session information, either in backend storage or as a cookie in the incoming request. It extracts the access token from the session information and sends it upstream (**Authorization: Bearer xxxx** header).
+For each HTTP request the gatekeeper looks up the session information and extracts the access token. It then sends it upstream to the final
+destination (**Authorization: Bearer xxxx** header). It also refreshes the access token if needed.
 
-It also provides three endpoints for logging in, callback from the login and logout. It handles the OIDC providers interface and creates the cookies and backend storage of the session information.
+The gatekeeper also provides three endpoints. One for logging in and the callback from the login and one for logging out. It handles the OIDC providers authentication and authorization endpoints, cookies and backend storage for the session information.
 
+### Session information
+The session information contains the session id, the access token, the refresh token and the id token. If stored in the browser it is encrypted with the gatekeepers keys, and if stored in the backend it is encrypted with a random generated key stored in a cookie and is unique for the session.
 ### The use of cookies and backend storage
-It relies on the use of secure HTTP-only cookies and it uses them in two different ways depending on what kind of storage of the session information that is selected.
+The gatekeeper relies on the use of secure HTTP-only cookies and it uses them in two different ways depending on the selected method for storage.
 #### Browser storage
-In browser storage mode, the entire session information is encrypted, using the gatekeepers encryption key, and stored in the cookies. No backend storage is used.
-* The drawback is that the requests from the browser can be really big.
+In browser storage mode, the entire session information is stored in the cookies. No backend storage is used.
+* The drawback is that the requests from the browser can be really big because of the cookies size.
 * The advantage is that you will need no backend storage and you can easily load balance between multiple gatekeepers.
 #### Backend storage
-In backend storage mode, a session identifier and the backend storage encryption key is stored in the cookies. The actual session information is encrypted, using the browser side backend storage encryption key, and stored in the backend. 
+In backend storage mode, a session identifier and the backend storage encryption key is stored in the cookies. The actual session information is stored in the backend. 
 * The advantage is that the size of the requst from the browser will be small.
 
 Currently there are two different backend storages implemented:
@@ -32,15 +35,14 @@ Currently there are two different backend storages implemented:
 ### Endpoints
 
 #### /oidc/login
-This is the login endpoint that is used whenever an application wants to authenticate the user. If the browser has no valid cookies the gatekeeper will redirect the browser to the login endpoint of the OIDC provider. Upon successfull login the provider will redirect the browser back to the **/oidc/callback** endpoint at the gatekeeper.
+This is the login endpoint that is used whenever an application wants to authenticate the user. If the browser has no valid session the gatekeeper will redirect the browser to the authorization endpoint of the OIDC provider and reqeust a new code. Upon successfull login the provider will redirect the browser back to the **/oidc/callback** endpoint at the gatekeeper.
 
-It has one parameter, **redirect_uri** which is optional. It allows you to specify which URL to redirect the browser upon successful code to authentication token exchange. If omitted the gatekeeper will use the **oidcgk.application.url** property as the destination of the redirect.
 #### /oidc/callback
-When the user has successfully logged in at the OIDC provider it will redirect the browser to this endpoint where the gatekeeper can exchange the code to an authorization token and create the complete session information.
+When the user has successfully logged in at the OIDC provider it will redirect the browser to this endpoint where the gatekeeper exchanges the code for an access token, refresh token and id token with the providers token endpoint. It then creates the complete session information and stores it.
 #### /oidc/logout
-This endpoint logs out the user.
+This endpoint logs out the user and destroys the session information.
 #### /*
-This endpoint is used by the istio authroization extension to verify the session information before allowing the call to go through to the actual endpoint.
+This endpoint is used by the istio authorization extension to verify the session information, extract the access token and refreshes it with the OIDC provider if needed. It responds to istio with 200OK if it will allow it to proceed.
 
 ### Runtime and development versions
 The following versions are used for runtime, development and testing. It might work perfectly fine with other versions as well but it has not been verified.
@@ -50,8 +52,7 @@ The following versions are used for runtime, development and testing. It might w
 
 ### Things to add or do
 * Performance tuning and deployment scenarios.
-* Add and option for fine grained authorization in the same ways as [Authz](https://github.com/dnulnets/authz)
-* Remove the redirect_uri parameter for the /oidc/login endpoint.
+* Add and option for fine grained authorization in the same ways as [Authz](https://github.com/dnulnets/authz) for the istio extension authroization.
 
 ## Kubernetes setup
 
