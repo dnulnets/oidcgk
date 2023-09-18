@@ -28,10 +28,10 @@ import eu.stenlund.Configuration;
 import eu.stenlund.oidc.client.TokenService;
 import eu.stenlund.oidc.client.Tokens;
 import eu.stenlund.session.SessionHelper;
-import eu.stenlund.session.storage.BrowserSessionStorage;
 import eu.stenlund.session.storage.IStorage;
 import eu.stenlund.session.storage.Session;
 import io.quarkus.rest.client.reactive.QuarkusRestClientBuilder;
+import io.smallrye.jwt.auth.principal.JWTAuthContextInfo;
 import io.smallrye.jwt.auth.principal.JWTParser;
 import io.smallrye.jwt.auth.principal.ParseException;
 
@@ -165,13 +165,16 @@ public class Resource {
             if (s.access_token != null) {
 
                 try {
-                    JsonWebToken jwt = jwtParser.parse (s.access_token);
+
+                    JWTAuthContextInfo jaci = new JWTAuthContextInfo(config.getJWKSEndpoint().toString(), config.getIssuer());
+                    JsonWebToken jwt = jwtParser.parse(s.access_token, jaci);
                     rr = ResponseBuilder.ok().header("Authorization", "Bearer "+s.access_token);
+                    
                 } catch (ParseException e) {
 
                     log.info ("The access token failed verification for the session");
                     log.info (e.getMessage());
-                    log.info ("Trying to refresh it");
+
                     /* it failed to verify, try to refresh it */
                     Session ns = refreshSession(s);
                     if (ns != null) {
@@ -183,9 +186,9 @@ public class Resource {
 
                     } else {
 
-                        log.info ("Failed to refresh it, removing session");
+                        log.info ("Failed to refresh it, removing current session");
                         storage.get().removeSession();
-                        s =null;
+                        s = null;
                         rr = ResponseBuilder.create (StatusCode.FORBIDDEN).
                             entity (new Error ("Unable to refresh access token"));
 
@@ -208,7 +211,7 @@ public class Resource {
             /* No session, so we will deny this request */
             log.info ("No session found");
             storage.get().removeSession();
-            rr = ResponseBuilder.create(StatusCode.FORBIDDEN, "No valid session");
+            rr = ResponseBuilder.create(StatusCode.UNAUTHORIZED, "No valid session");
         }
 
         /* Add some default headers */

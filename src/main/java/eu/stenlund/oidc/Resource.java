@@ -27,6 +27,7 @@ import eu.stenlund.session.storage.Session;
 import eu.stenlund.session.storage.SessionKey;
 import eu.stenlund.session.SessionHelper;
 import io.quarkus.rest.client.reactive.QuarkusRestClientBuilder;
+import io.smallrye.jwt.auth.principal.JWTAuthContextInfo;
 import io.smallrye.jwt.auth.principal.JWTParser;
 import io.smallrye.jwt.auth.principal.ParseException;
 
@@ -162,11 +163,16 @@ public class Resource {
                 try {
 
                     /* Parse the token */
-                    JsonWebToken jwt = jwtParser.parse (s.access_token);
+                    JWTAuthContextInfo jaci = new JWTAuthContextInfo(config.getJWKSEndpoint().toString(), config.getIssuer());
+                    JsonWebToken jwt = jwtParser.parse(s.access_token, jaci);
+                    rr = ResponseBuilder.ok().header("Authorization", "Bearer "+s.access_token);
 
                     /* Yes we have a valid session, redirect us to the application url */
-                    if (s.redirect_uri == null)
+                    if (s.redirect_uri == null) {
                         s.redirect_uri = config.getApplicationURL();
+                        storage.get().updateSession(s);
+                    }
+
                     rr = ResponseBuilder.create(StatusCode.FOUND).location(URI.create(s.redirect_uri));
 
                 } catch (ParseException e) {
@@ -182,6 +188,7 @@ public class Resource {
                         log.info ("Refreshed");
                         if (ns.redirect_uri == null)
                             ns.redirect_uri = config.getApplicationURL();
+
                         rr = ResponseBuilder.create(StatusCode.FOUND).location(URI.create(s.redirect_uri));
 
                         /* Update the stored session */                                                        
@@ -191,7 +198,7 @@ public class Resource {
 
                         storage.get().removeSession();
                         log.info ("Unable to refresh the access token");
-                        rr = ResponseBuilder.create (StatusCode.BAD_REQUEST).entity (new Error ("Unable to refresh access token"));
+                        rr = ResponseBuilder.create (StatusCode.FORBIDDEN).entity (new Error ("Unable to refresh access token"));
 
                     }
 
@@ -203,6 +210,8 @@ public class Resource {
                 log.info ("No access token present in the session");
                 storage.get().removeSession();
                 s = null;
+                rr = ResponseBuilder.create(StatusCode.FORBIDDEN)
+                    .entity (new Error ("No access token present in the session"));
             }
 
         }
@@ -224,7 +233,8 @@ public class Resource {
                 rr = ResponseBuilder.create(StatusCode.FOUND).location (config.buildRedirectToLogin (key.id));
             else {
                 log.warn("No key generated, unable to initiate login sequence");
-                rr = ResponseBuilder.create(StatusCode.BAD_REQUEST).entity (new Error ("Unable to initiate login sequence"));
+                rr = ResponseBuilder.create(StatusCode.INTERNAL_SERVER_ERROR)
+                    .entity (new Error ("Unable to initiate login sequence"));
             }
         }
 
@@ -329,7 +339,7 @@ public class Resource {
                     log.info (cwe.getMessage());
                     storage.get().removeSession();
                     s = null;
-                    rr = ResponseBuilder.create (StatusCode.BAD_REQUEST).entity (new Error ("Unable to get access token"));
+                    rr = ResponseBuilder.create (StatusCode.FORBIDDEN).entity (new Error ("Unable to get access token"));
 
                 }
 
@@ -337,7 +347,7 @@ public class Resource {
                 log.infof ("State do not align with session key, state=%s", state);
                 storage.get().removeSession();
                 s = null;
-                rr = ResponseBuilder.create (StatusCode.BAD_REQUEST).entity (new Error ("State and session do not match"));
+                rr = ResponseBuilder.create (StatusCode.FORBIDDEN).entity (new Error ("State and session do not match"));
             }
 
         } else {

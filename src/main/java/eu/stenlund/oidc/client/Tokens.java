@@ -4,6 +4,7 @@ import java.util.Optional;
 
 public class Tokens {
 
+    public String issuer;
     public String access_token;
     public String token_type;
     public int expires_in;

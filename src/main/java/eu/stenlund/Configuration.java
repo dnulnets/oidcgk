@@ -122,6 +122,14 @@ public class Configuration {
         return URI.create(providerConfig.token_endpoint);
     }
 
+    public URI getJWKSEndpoint() {
+        return URI.create (providerConfig.jwks_uri);
+    }
+
+    public String getIssuer() {
+        return providerConfig.issuer;
+    }
+
     /**
      * Builds an URI for the redirection to the login service at the OIDC provider.
      * 
