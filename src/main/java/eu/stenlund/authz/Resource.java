@@ -30,6 +30,7 @@ import eu.stenlund.oidc.client.Tokens;
 import eu.stenlund.session.SessionHelper;
 import eu.stenlund.session.storage.IStorage;
 import eu.stenlund.session.storage.Session;
+import io.quarkus.arc.log.LoggerName;
 import io.quarkus.rest.client.reactive.QuarkusRestClientBuilder;
 import io.smallrye.jwt.auth.principal.JWTAuthContextInfo;
 import io.smallrye.jwt.auth.principal.JWTParser;
@@ -49,7 +50,8 @@ import org.jboss.logmanager.MDC;
 public class Resource {
 
     /** Logger */
-    private static final Logger log = Logger.getLogger(Resource.class);
+    @Inject Logger log;
+    @LoggerName("AUDIT") Logger audit;
 
     /* Get the application */
     @Inject Application appl;
@@ -161,6 +163,9 @@ public class Resource {
             /* Set the session key */
             MDC.put("SessionKey", s.id);
 
+            /* Log audit */
+            audit.info("AUDIT: " + s.id);
+
             /* Is the session valid? */
             if (s.access_token != null) {
 
@@ -168,6 +173,10 @@ public class Resource {
 
                     JWTAuthContextInfo jaci = new JWTAuthContextInfo(config.getJWKSEndpoint().toString(), config.getIssuer());
                     JsonWebToken jwt = jwtParser.parse(s.access_token, jaci);
+                    audit.infof("Authz subject=%s, audience=%s, path=%s, method=%s", jwt.getSubject(), jwt.getAudience()
+                        .stream()
+                        .reduce ("", (st,e)->(st.length()==0?e:st+","+e)),
+                        path, method);
                     rr = ResponseBuilder.ok().header("Authorization", "Bearer "+s.access_token);
                     
                 } catch (ParseException e) {

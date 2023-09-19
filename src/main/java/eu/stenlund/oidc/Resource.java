@@ -26,6 +26,7 @@ import eu.stenlund.session.storage.IStorage;
 import eu.stenlund.session.storage.Session;
 import eu.stenlund.session.storage.SessionKey;
 import eu.stenlund.session.SessionHelper;
+import io.quarkus.arc.log.LoggerName;
 import io.quarkus.rest.client.reactive.QuarkusRestClientBuilder;
 import io.smallrye.jwt.auth.principal.JWTAuthContextInfo;
 import io.smallrye.jwt.auth.principal.JWTParser;
@@ -50,7 +51,8 @@ import org.jboss.logmanager.MDC;
 public class Resource {
 
     /** Logger */
-    private static final Logger log = Logger.getLogger(Resource.class);
+    @Inject Logger log;
+    @LoggerName("AUDIT") Logger audit;
 
     /* The root application */
     @Inject Application appl;
@@ -99,6 +101,7 @@ public class Resource {
         if (s!=null) {
 
             try {
+
                 /* Refresh the tokens */
                 Tokens t = tokenService.token(config.getOIDCClient(), 
                     null, 
@@ -165,6 +168,9 @@ public class Resource {
                     /* Parse the token */
                     JWTAuthContextInfo jaci = new JWTAuthContextInfo(config.getJWKSEndpoint().toString(), config.getIssuer());
                     JsonWebToken jwt = jwtParser.parse(s.access_token, jaci);
+                    audit.infof ("Login subject=%s, audience=%s", jwt.getSubject(), jwt.getAudience()
+                        .stream()
+                        .reduce ("", (st,e)->(st.length()==0?e:st+","+e)));
                     rr = ResponseBuilder.ok().header("Authorization", "Bearer "+s.access_token);
 
                     /* Yes we have a valid session, redirect us to the application url */
@@ -189,10 +195,10 @@ public class Resource {
                         if (ns.redirect_uri == null)
                             ns.redirect_uri = config.getApplicationURL();
 
-                        rr = ResponseBuilder.create(StatusCode.FOUND).location(URI.create(s.redirect_uri));
-
                         /* Update the stored session */                                                        
                         storage.get().updateSession(ns);
+
+                        rr = ResponseBuilder.create(StatusCode.FOUND).location(URI.create(s.redirect_uri));
 
                     } else {
 
@@ -209,15 +215,11 @@ public class Resource {
                 /* Not a valid session */
                 log.info ("No access token present in the session");
                 storage.get().removeSession();
-                s = null;
                 rr = ResponseBuilder.create(StatusCode.FORBIDDEN)
                     .entity (new Error ("No access token present in the session"));
             }
 
-        }
-
-        /* If we did not get a good session, we need to login again so create a new session */
-        if (s == null) {
+        } else {
 
             /* Create the session */
             Session ns = new Session();
@@ -317,18 +319,35 @@ public class Resource {
 
                     } else {
 
-                        /* Update the session */
-                        s.access_token = t.access_token;
-                        s.refresh_token = t.refresh_token.orElse(null);
-                        s.id_token = t.id_token;
+                        try {
 
-                        /* Redirect us to the application */
-                        if (s.redirect_uri == null)
-                            s.redirect_uri = config.getApplicationURL();
-                        rr = ResponseBuilder.create (StatusCode.FOUND).location (URI.create(s.redirect_uri));
+                            /* Parse the token */
+                            JWTAuthContextInfo jaci = new JWTAuthContextInfo(config.getJWKSEndpoint().toString(), config.getIssuer());
+                            JsonWebToken jwt = jwtParser.parse(t.access_token, jaci);
+                            audit.infof ("Callback subject=%s, audience=%s", jwt.getSubject(), jwt.getAudience()
+                                .stream()
+                                .reduce ("", (st,e)->(st.length()==0?e:st+","+e)));
 
-                        /* Update the session */
-                        storage.get().updateSession(s);
+                            /* Update the session */
+                            s.access_token = t.access_token;
+                            s.refresh_token = t.refresh_token.orElse(null);
+                            s.id_token = t.id_token;
+
+                            /* Redirect us to the application */
+                            if (s.redirect_uri == null)
+                                s.redirect_uri = config.getApplicationURL();
+                            rr = ResponseBuilder.create (StatusCode.FOUND).location (URI.create(s.redirect_uri));
+
+                            /* Update the session */
+                            storage.get().updateSession(s);
+                            
+                        } catch (ParseException e) {
+
+                            storage.get().removeSession();
+                            log.info ("Unable to verify the access token");
+                            rr = ResponseBuilder.create (StatusCode.FORBIDDEN).entity (new Error ("Unable to verify access token"));
+
+                        }
 
                     }
                     
