@@ -146,7 +146,7 @@ public class Resource {
     {
         ResponseBuilder<Object> rr = null;
 
-        /* Loggable information */
+        /* Loggable information, get some trace id */
         MDC.put("RequestID", SessionHelper.generateRandomUUID());
 
         /* Get our storage */
@@ -213,10 +213,10 @@ public class Resource {
             } else {
 
                 /* Not a valid session */
-                log.info ("No access token present in the session");
+                log.info ("No access token present in the session information");
                 storage.get().removeSession();
                 rr = ResponseBuilder.create(StatusCode.FORBIDDEN)
-                    .entity (new Error ("No access token present in the session"));
+                    .entity (new Error ("No access token present in the session information"));
             }
 
         } else {
@@ -234,9 +234,9 @@ public class Resource {
             if (key != null)
                 rr = ResponseBuilder.create(StatusCode.FOUND).location (config.buildRedirectToLogin (key.id));
             else {
-                log.warn("No key generated, unable to initiate login sequence");
+                log.warn("Not able to generate key, unable to initiate login sequence");
                 rr = ResponseBuilder.create(StatusCode.INTERNAL_SERVER_ERROR)
-                    .entity (new Error ("Unable to initiate login sequence"));
+                    .entity (new Error ("Unable to initiate login sequence, unable to generate key"));
             }
         }
 
