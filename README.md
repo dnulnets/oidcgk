@@ -113,7 +113,7 @@ spec:
 
 ## Deployment of the gatekeeper
 ### Configuring the gatekeeper
-
+The configuration is stored in the application.properties file.
 #### Base configuration (oidc.base)
 Contains configuration for the behaviour of the gatekeeper.
 |Property|Description|Default |
@@ -129,6 +129,16 @@ Contains configuration for the application protected by the gatekeeper.
 |Property|Description|Default |
 |---|---|---|
 |oidcgk.application.url|The application url that the gatekeeper redirects to after successful login.|None| 
+
+#### OIDC Provider (oidcgk.oidc)
+Contains configuration for where the OIDC provider is located and which realm and client to use during authentication.
+|Property|Description|Default |
+|---|---|---|
+|oidcgk.oidc.url|The URL to the OIDC providers well known configuration information.|None|
+|oidcgk.oidc.realm|The realm to use during authentication|None|
+|oidcgk.oidc.client|The confidential client to use during configuration|None|
+|oidcgk.oidc.secret|The secret of the confidential client.|None|
+|oidcgk.oidc.audience|The audience required in the token when authenticated.|None|
 
 ## How to build it
 ### Building the docker image
