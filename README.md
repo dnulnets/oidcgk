@@ -1,6 +1,6 @@
 # OpenID Connect Gatekeeper for Istio
 This project creates a standalone OpenId Connect Gatekeeper that will handle login, logout to an OIDC provider and protect certain routes
-as an extension provider to istio. The gatekeeper acts as a confidential client and uses the authorization code flow. It handles code exchange and token refresh automatically. The session information is kept either in an encrypted secure HTTP-only cookie or in a memory or encrypted redis storage at the backend. The istio extension provider will verify the token and send the access token upstream to the destination.
+as an extension provider to istio. The gatekeeper acts as a confidential client and uses the authorization code flow. It handles code exchange and token refresh automatically. The session information is kept either in an encrypted secure HTTP-only cookie or in a memory or encrypted redis or infinispan storage at the backend. The istio extension provider will verify the token and send the access token upstream to the destination.
 
 It can protect any type of server side resources, such as API:s, static webpages and can also be used by SPA:s to make it simpler to handle authentication and authorization.
 
@@ -24,11 +24,14 @@ In browser storage mode, the entire session information is stored in the cookies
 In backend storage mode, a session identifier and the backend storage encryption key is stored in the cookies. The actual session information is stored in the backend. 
 * The advantage is that the size of the requst from the browser will be small.
 
-Currently there are two different backend storages implemented:
+Currently there are three different backend storages implemented:
 * **memory**, which do not require any external storage.
   * The drawback is that the sessions will not survive a restart of the server and if using more than one gatekeeper to load balance between you need to use sticky sessions.
   * The advantage is that it is easily configured for the backend.
 * **redis**, which requires an external Redis-server.
+  * The drawback is that it is a more cumbersome to set up.
+  * The advantage is that the sessions will survive a restart.
+* **infinispan**, which requires an external infinispan-server.
   * The drawback is that it is a more cumbersome to set up.
   * The advantage is that the sessions will survive a restart.
 
@@ -53,6 +56,7 @@ The following versions are used for runtime, development and testing. It might w
 ### Things to add or do
 * Performance tuning and deployment scenarios.
 * Add and option for fine grained authorization in the same ways as [Authz](https://github.com/dnulnets/authz) for the istio extension authroization.
+* Add logout endpoint
 
 ## Kubernetes setup
 
