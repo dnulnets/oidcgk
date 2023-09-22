@@ -114,14 +114,21 @@ spec:
 ## Deployment of the gatekeeper
 ### Configuring the gatekeeper
 
-#### oidc.base
-
+#### Base configuration (oidc.base)
+Contains configuration for the behaviour of the gatekeeper.
 |Property|Description|Default |
 |---|---|---|
 |oidcgk.base.url|The base url for the gatekeepe. Used e.g. when creating the callback url|None| 
 |oidcgk.base.aad|Additional authentication data used during encryption and decryption when storing the session in the browser.|OpenID Connect Gate Keeper Version 0.1|
-|oidcgk.base.frontend|Specifies what is stored in the browser cookie. It can be either "key" or "session".|None|
-|oidcgk.base.backend|Specifies what backend storage is used when the frontend only stores the key. it can be either "memory", "redis" or "infinispan"|None|
+|oidcgk.base.storage.frontend|Specifies what is stored in the browser cookie. It can be either **key** or **session**. If **key** is selected you also need to select the backend storage.|None|
+|oidcgk.base.storage.backend|Specifies what backend storage is used when the frontend only stores **key**s. it can be either **memory**, **redis** or **infinispan**|None|
+|oidcgk.base.storage.TTL|Specifies the time to live for the session in the backend storage in seconds.|1800|
+
+#### Application specificconfiguration (oidcgk.application)
+Contains configuration for the application protected by the gatekeeper.
+|Property|Description|Default |
+|---|---|---|
+|oidcgk.application.url|The application url that the gatekeeper redirects to after successful login.|None| 
 
 ## How to build it
 ### Building the docker image
