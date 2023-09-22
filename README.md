@@ -124,7 +124,7 @@ Contains configuration for the behaviour of the gatekeeper.
 |oidcgk.base.storage.backend|Specifies what backend storage is used when the frontend only stores **key**s. it can be either **memory**, **redis** or **infinispan**|None|
 |oidcgk.base.storage.TTL|Specifies the time to live for the session in the backend storage in seconds.|1800|
 
-#### Application specificconfiguration (oidcgk.application)
+#### Application specific configuration (oidcgk.application)
 Contains configuration for the application protected by the gatekeeper.
 |Property|Description|Default |
 |---|---|---|
@@ -139,6 +139,16 @@ Contains configuration for where the OIDC provider is located and which realm an
 |oidcgk.oidc.client|The confidential client to use during configuration|None|
 |oidcgk.oidc.secret|The secret of the confidential client.|None|
 |oidcgk.oidc.audience|The audience required in the token when authenticated.|None|
+
+#### Cookie configuration (oidcgk.cookie)
+The configuration of the cookies used for storage.
+|Property|Description|Default |
+|---|---|---|
+|oidcgk.cookie.name|The base name of the cookie, used for all the cookies created by the gatekeeper.|oidcgk|
+|oidcgk.cookie.domain|The domain of the cookie.|None|
+|oidcgk.cookie.path|The path of th ecookie.|/|
+|oidcgk.cookie.maxAge|The maximum age of the cookies.|10800|
+|oidcgk.cookie.key|The key used when encrypting and decrypting the cookies|None|
 
 ## How to build it
 ### Building the docker image
