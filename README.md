@@ -4,13 +4,13 @@ as an extension provider to istio. The gatekeeper acts as a confidential client 
 
 It can protect any type of server side resources, such as API:s, static webpages and can also be used by SPA:s to make it simpler to handle authentication and authorization.
 
-**NOTE!** This is work in progress and have some thing that needs to be done and quirks to solve before it is production ready. But it is fully functional for experimental use for now.
+**NOTE!** This is work in progress but it is fully functional for experimental use for now.
 
 ## Introduction
 For each HTTP request the gatekeeper looks up the session information and extracts the access token. It then sends it upstream to the final
 destination (**Authorization: Bearer xxxx** header). It also refreshes the access token if needed.
 
-The gatekeeper also provides three endpoints. One for logging in and the callback from the login and one for logging out. It handles the OIDC providers authentication and authorization endpoints, cookies and backend storage for the session information.
+The gatekeeper provides three endpoints. One for logging in and the callback from the login and one for logging out. It handles the OIDC providers authentication and authorization endpoints, cookies and backend storage for the session information.
 
 ### Session information
 The session information contains the session id, the access token, the refresh token and the id token. If stored in the browser it is encrypted with the gatekeepers keys, and if stored in the backend it is encrypted with a random generated key stored in a cookie and is unique for the session.
@@ -55,7 +55,7 @@ The following versions are used for runtime, development and testing. It might w
 
 ### Things to add or do
 * Performance tuning and deployment scenarios.
-* Add and option for fine grained authorization in the same ways as [Authz](https://github.com/dnulnets/authz) for the istio extension authroization.
+* Add and option for fine grained authorization in the same ways as [Authz](https://github.com/dnulnets/authz) for the istio extension authorization.
 * Add logout endpoint
 
 ## Kubernetes setup
@@ -113,6 +113,16 @@ spec:
 
 ## Deployment of the gatekeeper
 ### Configuring the gatekeeper
+
+#### oidc.base
+
+|Property|Description|Default |
+|---|---|---|
+|oidcgk.base.url|The base url for the gatekeepe. Used e.g. when creating the callback url|None| 
+|oidcgk.base.aad|Additional authentication data used during encryption and decryption when storing the session in the browser.|OpenID Connect Gate Keeper Version 0.1|
+|oidcgk.base.frontend|Specifies what is stored in the browser cookie. It can be either "key" or "session".|None|
+|oidcgk.base.backend|Specifies what backend storage is used when the frontend only stores the key. it can be either "memory", "redis" or "infinispan"|None|
+
 ## How to build it
 ### Building the docker image
 It is published on docker hub as dnulnets/oidcgk, but if you want to build it on your own it can be done with the following command.
