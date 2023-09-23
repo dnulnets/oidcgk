@@ -32,13 +32,9 @@ import eu.stenlund.session.storage.IStorage;
 import eu.stenlund.session.storage.Session;
 import io.quarkus.arc.log.LoggerName;
 import io.quarkus.rest.client.reactive.QuarkusRestClientBuilder;
-import io.smallrye.jwt.auth.principal.JWTAuthContextInfo;
-import io.smallrye.jwt.auth.principal.JWTParser;
-import io.smallrye.jwt.auth.principal.ParseException;
 
 import java.util.Collection;
 
-import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.jboss.logging.Logger;
 import org.jboss.logmanager.MDC;
 
@@ -61,9 +57,6 @@ public class Resource {
 
     /* Get the configuration */
     @Inject Configuration config;
-    
-    /* Get the parser */
-    @Inject JWTParser jwtParser;
 
     /* The session storage */
     @Inject Instance<IStorage> storage;
@@ -163,38 +156,41 @@ public class Resource {
             /* Set the session key */
             MDC.put("SessionKey", s.id);
 
-            /* Log audit */
-            audit.info("AUDIT: " + s.id);
-
             /* Is the session valid? */
             if (s.access_token != null) {
 
-                try {
+                if (sessionHelper.verifyToken(s.access_token, s.subject) != null) {
 
-                    JWTAuthContextInfo jaci = new JWTAuthContextInfo(config.getJWKSEndpoint().toString(), config.getIssuer());
-                    JsonWebToken jwt = jwtParser.parse(s.access_token, jaci);
-                    audit.infof("Authz subject=%s, audience=%s, path=%s, method=%s", jwt.getSubject(), jwt.getAudience()
-                        .stream()
-                        .reduce ("", (st,e)->(st.length()==0?e:st+","+e)),
-                        path, method);
+                    audit.infof("Authorized subject=%s, path=%s, method=%s", s.subject, path, method);
                     rr = ResponseBuilder.ok().header("Authorization", "Bearer "+s.access_token);
-                    
-                } catch (ParseException e) {
+
+                } else {
 
                     log.info ("The access token failed verification for the session");
-                    log.info (e.getMessage());
 
                     /* it failed to verify, try to refresh it */
                     Session ns = refreshSession(s);
                     if (ns != null) {
 
-                        log.info ("Refreshed");
-                        storage.get().updateSession(ns);
-                        /* We are allowed so we need to propagate the token upstreams */
-                        rr = ResponseBuilder.ok().header("Authorization", "Bearer "+s.access_token);
+                        /* Did we get a correct token */
+                        if (sessionHelper.verifyToken (ns.access_token, ns.subject) != null) {
+                            storage.get().updateSession(ns);
+                            audit.infof ("Authorized subject=%s, path=%s, method=%s", ns.subject, path, method);
+                            rr = ResponseBuilder.ok().header("Authorization", "Bearer "+s.access_token);
+                        } else {
+                            audit.errorf("Denied subject=%s, path=%s, method=%s", s.subject, path, method);
+                            log.info ("Refreshed token failed token verification");
+                            storage.get().removeSession();
+                            s = null;
+                            rr = ResponseBuilder.create (StatusCode.FORBIDDEN).
+                                entity (new Error ("Refreshed token failed token verification"));
+
+                        }
 
                     } else {
 
+                        /* We were not able to refresh the token */
+                        audit.errorf("Denied subject=%s, path=%s, method=%s", s.subject, path, method);
                         log.info ("Failed to refresh it, removing current session");
                         storage.get().removeSession();
                         s = null;
@@ -208,6 +204,7 @@ public class Resource {
             } else {
 
                 /* Not a valid session */
+                audit.errorf("Denied path=%s, method=%s", path, method);
                 log.info ("No access token present in the session");
                 storage.get().removeSession();
                 s = null;
@@ -218,6 +215,7 @@ public class Resource {
         } else {
 
             /* No session, so we will deny this request */
+            audit.errorf("Denied path=%s, method=%s", path, method);
             log.info ("No session found");
             storage.get().removeSession();
             rr = ResponseBuilder.create(StatusCode.UNAUTHORIZED, "No valid session");

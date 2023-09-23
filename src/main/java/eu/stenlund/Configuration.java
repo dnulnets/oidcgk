@@ -1,6 +1,9 @@
 package eu.stenlund;
 
 import java.net.URI;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
@@ -38,6 +41,7 @@ public class Configuration {
     @ConfigProperty(name = "oidcgk.oidc.client") String kcClient;
     @ConfigProperty(name = "oidcgk.oidc.secret") String kcSecret;
     @ConfigProperty(name = "oidcgk.oidc.scope") String kcScope;
+    @ConfigProperty(name = "oidcgk.oidc.audience") String kcAudience;
 
     /* The base URL for the application root */
     @ConfigProperty(name = "oidcgk.base.url") String baseURL;
@@ -70,6 +74,15 @@ public class Configuration {
         log.info ("authorization endpoint = " + providerConfig.authorization_endpoint);
         log.info ("token endpoint = " + providerConfig.token_endpoint);
         log.info ("jwks URI = " + providerConfig.jwks_uri);
+    }
+
+    public String getAudience() {
+        return kcAudience;
+    }
+
+    public Set<String> getAudienceSet() {
+        Set<String> ss = new HashSet<String>(Arrays.asList(kcAudience.trim().split("\\s+")));
+        return ss;
     }
 
     public String getContext() {

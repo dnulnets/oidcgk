@@ -31,11 +31,15 @@ import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.NewCookie.SameSite;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.jboss.logging.Logger;
 
 import eu.stenlund.Configuration;
 import eu.stenlund.session.storage.Session;
 import eu.stenlund.session.storage.SessionKey;
+import io.smallrye.jwt.auth.principal.JWTAuthContextInfo;
+import io.smallrye.jwt.auth.principal.JWTParser;
+import io.smallrye.jwt.auth.principal.ParseException;
 import io.smallrye.mutiny.tuples.Tuple2;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -58,6 +62,9 @@ public class SessionHelper {
     /* Configuration */
     @Inject
     Configuration config;
+
+    /* Get the parser */
+    @Inject JWTParser jwtParser;
 
     /* Our random number generator */
     private final static SecureRandom secureRandom = new SecureRandom();
@@ -478,6 +485,43 @@ public class SessionHelper {
             } else
                 return null;
         }    
+    }
+
+    /**
+     * Verifies a JWT, checking for expiration, issuer and audience.
+     * 
+     * @param token The token as a string
+     * @param subject The expected subject in the token
+     * @return The parsed token
+     */
+    public JsonWebToken verifyToken(String token, String subject)
+    {
+
+        JWTAuthContextInfo jaci = new JWTAuthContextInfo(config.getJWKSEndpoint().toString(), config.getIssuer());
+        jaci.setExpectedAudience(config.getAudienceSet());
+        jaci.setAlwaysCheckAuthorization(true);
+        jaci.setRequireNamedPrincipal(true);
+        
+        /* Parse the token */
+        JsonWebToken jwt = null;
+        try {
+            jwt = jwtParser.parse(token, jaci);
+
+            /* Same subject as the session says it should be? */
+            if (subject != null) {
+                if (subject.compareTo(jwt.getSubject())!=0) {
+                    log.infof ("Expected subject %s got %s in access token", subject, jwt.getSubject());
+                    jwt = null;
+                }
+            }
+            
+        } catch (ParseException e) {
+            log.infof ("Uable to parse token for subject=%s", subject);
+            log.info (e.getMessage());
+            jwt = null;
+        }
+
+        return jwt;
     }
 
 }
