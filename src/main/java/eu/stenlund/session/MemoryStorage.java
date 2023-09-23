@@ -10,7 +10,7 @@ import io.quarkus.arc.lookup.LookupIfProperty;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-@LookupIfProperty(name = "oidcgk.base.storage.backend", stringValue = "memory")
+@LookupIfProperty(name = "oidcgk.base.storage", stringValue = "memory")
 public class MemoryStorage implements IBackendStorage {
 
     /**

@@ -26,7 +26,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 @ApplicationScoped
-@LookupIfProperty(name = "oidcgk.base.storage.backend", stringValue = "redis")
+@LookupIfProperty(name = "oidcgk.base.storage", stringValue = "redis")
 public class RedisStorage implements IBackendStorage {
 
     /* Logger */

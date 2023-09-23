@@ -120,8 +120,7 @@ Contains configuration for the behaviour of the gatekeeper.
 |---|---|---|
 |oidcgk.base.url|The base url for the gatekeepe. Used e.g. when creating the callback url|None| 
 |oidcgk.base.aad|Additional authentication data used during encryption and decryption when storing the session in the browser.|OpenID Connect Gate Keeper Version 0.1|
-|oidcgk.base.storage.frontend|Specifies what is stored in the browser cookie. It can be either **key** or **session**. If **key** is selected you also need to select the backend storage.|None|
-|oidcgk.base.storage.backend|Specifies what backend storage is used when the frontend only stores **key**s. it can be either **memory**, **redis** or **infinispan**|None|
+|oidcgk.base.storage|Specifies how the session information is stored. It can be either **browser**, **memory**, **redis** or **infinispan**.|None|
 |oidcgk.base.storage.TTL|Specifies the time to live for the session in the backend storage in seconds.|1800|
 
 #### Application specific configuration (oidcgk.application)
@@ -149,6 +148,22 @@ The configuration of the cookies used for storage.
 |oidcgk.cookie.path|The path of th ecookie.|/|
 |oidcgk.cookie.maxAge|The maximum age of the cookies.|10800|
 |oidcgk.cookie.key|The key used when encrypting and decrypting the cookies|None|
+
+#### Redis configuration
+The configuration of the redis client. Only useful if the storage **redis** is selected.
+|Property|Description|Default |
+|---|---|---|
+|quarkus.redis.oidcgk.hosts|The URL to the redis server. It must be of the format redis://my-redis:6379|None|
+
+#### Infinispan configuration
+The configuration of the infinispan client. Only useful if the storage **infinispan** is selected.
+|Property|Description|Default |
+|---|---|---|
+|quarkus.infinispan-client.uri|The URL to the infinispan cluster. it must be of the format **hotrod://admin:password@infinispan:11222**.|None|
+|quarkus.infinispan-client.username|The username for the infinispan cluster|None|
+|quarkus.infinispan-client.password|The password for the infinispan cluster|None|
+|quarkus.infinispan-client.cache.oidcgk.configuration|Configuration for the cache. It must at least be this value. **<distributed-cache><encoding media-type="text/plain"/></distributed-cache>**|None|
+|quarkus.infinispan-client.client-intelligence|The client behaviour. Should at least be **BASIC**|None|
 
 ## How to build it
 ### Building the docker image

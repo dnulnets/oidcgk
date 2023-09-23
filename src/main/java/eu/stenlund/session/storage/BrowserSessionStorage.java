@@ -19,7 +19,7 @@ import jakarta.inject.Inject;
  * @since 1.0
 */
 @RequestScoped
-@LookupIfProperty(name = "oidcgk.base.storage.frontend", stringValue = "session")
+@LookupIfProperty(name = "oidcgk.base.storage", stringValue = "browser")
 public class BrowserSessionStorage extends FrontendSessionStorage implements IStorage {
 
     /* Logger */

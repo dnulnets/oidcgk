@@ -23,7 +23,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 @ApplicationScoped
-@LookupIfProperty(name = "oidcgk.base.storage.backend", stringValue = "infinispan")
+@LookupIfProperty(name = "oidcgk.base.storage", stringValue = "infinispan")
 public class Infinispan implements IBackendStorage {
 
     /* Logger */

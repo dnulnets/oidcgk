@@ -5,6 +5,7 @@ import org.jboss.logging.Logger;
 import eu.stenlund.Configuration;
 import eu.stenlund.session.SessionHelper;
 import io.quarkus.arc.lookup.LookupIfProperty;
+import io.quarkus.arc.lookup.LookupUnlessProperty;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.RequestScoped;
@@ -21,7 +22,7 @@ import jakarta.inject.Inject;
  * @since 1.0
 */
 @RequestScoped
-@LookupIfProperty(name = "oidcgk.base.storage.frontend", stringValue = "key")
+@LookupUnlessProperty(name = "oidcgk.base.storage", stringValue = "browser")
 public class BrowserKeyStorage extends FrontendKeyStorage implements IStorage {
 
     /* Logger */
