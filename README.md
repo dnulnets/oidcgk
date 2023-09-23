@@ -17,11 +17,11 @@ The session information contains the session id, the access token, the refresh t
 ### The use of cookies and backend storage
 The gatekeeper relies on the use of secure HTTP-only cookies and it uses them in two different ways depending on the selected method for storage.
 #### Browser storage
-In browser storage mode, the entire session information is stored in the cookies. No backend storage is used.
+In browser storage mode i.e. **browser**, the entire session information is stored in the cookies. No backend storage is used.
 * The drawback is that the requests from the browser can be really big because of the cookies size.
 * The advantage is that you will need no backend storage and you can easily load balance between multiple gatekeepers.
 #### Backend storage
-In backend storage mode, a session identifier and the backend storage encryption key is stored in the cookies. The actual session information is stored in the backend. 
+In backend storage mode i.e. **memory**, **redis** or **infinispan**, a session identifier and the backend storage encryption key is stored in the cookies. The actual session information is stored in the backend. 
 * The advantage is that the size of the requst from the browser will be small.
 
 Currently there are three different backend storages implemented:
@@ -120,7 +120,7 @@ Contains configuration for the behaviour of the gatekeeper.
 |---|---|---|
 |oidcgk.base.url|The base url for the gatekeepe. Used e.g. when creating the callback url|None| 
 |oidcgk.base.aad|Additional authentication data used during encryption and decryption when storing the session in the browser.|OpenID Connect Gate Keeper Version 0.1|
-|oidcgk.base.storage|Specifies how the session information is stored. It can be either **browser**, **memory**, **redis** or **infinispan**.|None|
+|oidcgk.base.storage|Specifies how the session information is stored. It can be either **browser**, **memory**, **redis** or **infinispan**. **browser** and **memory** do not require any additional configuration.|None|
 |oidcgk.base.storage.TTL|Specifies the time to live for the session in the backend storage in seconds.|1800|
 
 #### Application specific configuration (oidcgk.application)
@@ -150,13 +150,13 @@ The configuration of the cookies used for storage.
 |oidcgk.cookie.key|The key used when encrypting and decrypting the cookies|None|
 
 #### Redis configuration
-The configuration of the redis client. Only useful if the storage **redis** is selected.
+The configuration of the redis client. Only useful if the storage **redis** is selected. See the quarkus documentation on all of the configuration properties of the redis client.
 |Property|Description|Default |
 |---|---|---|
 |quarkus.redis.oidcgk.hosts|The URL to the redis server. It must be of the format **redis://my-redis:6379**|None|
 
 #### Infinispan configuration
-The configuration of the infinispan client. Only useful if the storage **infinispan** is selected.
+The configuration of the infinispan client. Only useful if the storage **infinispan** is selected. See the quarkus documentation on all of the configuration properties of the infinispan client.
 |Property|Description|Default |
 |---|---|---|
 |quarkus.infinispan-client.uri|The URL to the infinispan cluster. it must be of the format **hotrod://admin:password@infinispan:11222**.|None|
