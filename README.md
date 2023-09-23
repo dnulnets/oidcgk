@@ -166,8 +166,10 @@ The configuration of the infinispan client. Only useful if the storage **infinis
 |quarkus.infinispan-client.client-intelligence|The client behaviour. Should at least be **BASIC**|None|
 
 ## How to build it
+### Docker hub
+The image is published on docker hub, see [Docker image](https://hub.docker.com/r/dnulnets/oidcgk).
 ### Building the docker image
-It is published on docker hub as dnulnets/oidcgk, but if you want to build it on your own it can be done with the following command.
+You can build it on your own with the following command:
 
 ```
 quarkus build -Dquarkus.container-image.build=true
