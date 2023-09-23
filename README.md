@@ -1,4 +1,4 @@
-# OpenID Connect Gatekeeper for Istio or any other PEP
+# OpenID Connect Gatekeeper and PDP for Istio or any other PEP
 This project creates a standalone OpenId Connect Gatekeeper that will handle login and logout to an OIDC provider and acts as a PDP, Policy Decisionion Point, for istio or any other PEP, Policy Enforcement Point, that can consume the PDP:s API.
 
 
