@@ -1,8 +1,11 @@
-# OpenID Connect Gatekeeper for Istio
-This project creates a standalone OpenId Connect Gatekeeper that will handle login, logout to an OIDC provider and protect certain routes
-as an extension provider to istio. The gatekeeper acts as a confidential client and uses the authorization code flow. It handles code exchange and token refresh automatically. The session information is kept either in an encrypted secure HTTP-only cookie or in a memory or encrypted redis or infinispan storage at the backend. The istio extension provider will verify the token and send the access token upstream to the destination.
+# OpenID Connect Gatekeeper for Istio or any other PEP
+This project creates a standalone OpenId Connect Gatekeeper that will handle login and logout to an OIDC provider and acts as a PDP, Policy Decisionion Point, for istio or any other PEP, Policy Enforcement Point, that can consume the PDP:s API.
 
-It can protect any type of server side resources, such as API:s, static webpages and can also be used by SPA:s to make it simpler to handle authentication and authorization.
+
+The gatekeeper acts as a confidential client and uses the authorization code flow. It handles code exchange and token refresh automatically. The session information is kept either in an encrypted secure HTTP-only cookie or in a memory or encrypted redis or infinispan storage at the backend. The PDP can act as an istio extension provider and will verify the session and send the access token together with the decision to the PEP. The PEP can then decide to sent it further downstrean to the destination.
+
+
+The gatekeeper can protect any type of server side resources, such as API:s, static webpages and can also be used by SPA:s to make it simpler to handle authentication and authorization.
 
 **NOTE!** This is work in progress but it is fully functional for experimental use for now.
 
@@ -45,7 +48,7 @@ When the user has successfully logged in at the OIDC provider it will redirect t
 #### /oidc/logout
 This endpoint logs out the user and destroys the session information.
 #### /*
-This endpoint is used by the istio authorization extension to verify the session information, extract the access token and refreshes it with the OIDC provider if needed. It responds to istio with 200OK if it will allow it to proceed.
+This endpoint is the PDP and verifes the session information, extract the access token and refreshes it with the OIDC provider if needed. The token is also sent back in the response as an **authorization**-header and any **set-cookie**-headers with a 200 OK if it will allow it to proceed.
 
 ### Runtime and development versions
 The following versions are used for runtime, development and testing. It might work perfectly fine with other versions as well but it has not been verified.
