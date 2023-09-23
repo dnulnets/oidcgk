@@ -153,7 +153,7 @@ The configuration of the cookies used for storage.
 The configuration of the redis client. Only useful if the storage **redis** is selected.
 |Property|Description|Default |
 |---|---|---|
-|quarkus.redis.oidcgk.hosts|The URL to the redis server. It must be of the format redis://my-redis:6379|None|
+|quarkus.redis.oidcgk.hosts|The URL to the redis server. It must be of the format **redis://my-redis:6379**|None|
 
 #### Infinispan configuration
 The configuration of the infinispan client. Only useful if the storage **infinispan** is selected.
@@ -162,7 +162,7 @@ The configuration of the infinispan client. Only useful if the storage **infinis
 |quarkus.infinispan-client.uri|The URL to the infinispan cluster. it must be of the format **hotrod://admin:password@infinispan:11222**.|None|
 |quarkus.infinispan-client.username|The username for the infinispan cluster|None|
 |quarkus.infinispan-client.password|The password for the infinispan cluster|None|
-|quarkus.infinispan-client.cache.oidcgk.configuration|Configuration for the cache. It must at least be this value. **<distributed-cache><encoding media-type="text/plain"/></distributed-cache>**|None|
+|quarkus.infinispan-client.cache.oidcgk.configuration|Configuration for the cache. It must at least be this value. **&lt;distributed-cache&gt;&lt;encoding media-type="text/plain"/&gt;&lt;/distributed-cache&gt;**|None|
 |quarkus.infinispan-client.client-intelligence|The client behaviour. Should at least be **BASIC**|None|
 
 ## How to build it
