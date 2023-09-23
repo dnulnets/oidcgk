@@ -29,10 +29,10 @@ Currently there are three different backend storages implemented:
   * The drawback is that the sessions will not survive a restart of the server and if using more than one gatekeeper to load balance between you need to use sticky sessions.
   * The advantage is that it is easily configured for the backend.
 * **redis**, which requires an external Redis-server.
-  * The drawback is that it is a more cumbersome to set up.
+  * The drawback is that it is more cumbersome to set up.
   * The advantage is that the sessions will survive a restart.
 * **infinispan**, which requires an external infinispan-server.
-  * The drawback is that it is a more cumbersome to set up.
+  * The drawback is that it is more cumbersome to set up.
   * The advantage is that the sessions will survive a restart.
 
 ### Endpoints
@@ -145,7 +145,7 @@ The configuration of the cookies used for storage.
 |---|---|---|
 |oidcgk.cookie.name|The base name of the cookie, used for all the cookies created by the gatekeeper.|oidcgk|
 |oidcgk.cookie.domain|The domain of the cookie.|None|
-|oidcgk.cookie.path|The path of th ecookie.|/|
+|oidcgk.cookie.path|The path of the cookie.|/|
 |oidcgk.cookie.maxAge|The maximum age of the cookies.|10800|
 |oidcgk.cookie.key|The key used when encrypting and decrypting the cookies|None|
 
