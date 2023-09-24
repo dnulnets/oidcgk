@@ -159,44 +159,55 @@ public class Resource {
             /* Is the session valid? */
             if (s.access_token != null) {
 
+                /* Validate the token */
                 if (sessionHelper.verifyToken(s.access_token, s.subject)==null) {
 
-                    audit.infof ("Login subject=%s", s.subject);
-
-                    rr = ResponseBuilder.ok().header("Authorization", "Bearer "+s.access_token);
-
-                    /* Yes we have a valid session, redirect us to the application url */
+                    /* Log it */
+                    audit.infof ("Login subject=%s, reason='Already logged in'", s.subject);
+                    
+                    /* Update storage */
                     if (s.redirect_uri == null) {
                         s.redirect_uri = config.getApplicationURL();
                         storage.get().updateSession(s);
                     }
 
-                    rr = ResponseBuilder.create(StatusCode.FOUND).location(URI.create(s.redirect_uri));
+                    /* Redirect us to the application */
+                    rr = ResponseBuilder.create(StatusCode.FOUND)
+                        .location(URI.create(s.redirect_uri));
 
                 } else {
 
+                    /* Log it */
                     log.info ("We were unable to verify the access token for the session");
                     log.info ("Refreshing token");
 
                     Session ns = refreshSession(s); 
                     if (ns != null) {
 
+                        /* Verify the new token */
                         if (sessionHelper.verifyToken(ns.access_token, ns.subject) != null) {
 
-                            /* Check redirect uri */
+                            /* Log it */
+                            audit.infof ("Login subject=%s, reason='Already logged in'", s.subject);
+
+                            /* Update the storage */
                             if (ns.redirect_uri == null)
                                 ns.redirect_uri = config.getApplicationURL();
-
-                            /* Update the stored session */                                                        
                             storage.get().updateSession(ns);
-                            audit.infof ("Login initiated for subject=%s", s.subject);
+
+                            /* Redirect us to the application */
                             rr = ResponseBuilder.create(StatusCode.FOUND).location(URI.create(s.redirect_uri));
 
                         } else {
 
-                            log.info ("Refreshed token failed token verification");
+                            /* Log it */
+                            log.info ("Refreshed token failed verification");
+                            audit.errorf ("Login failed subject=%s, reason='Refreshed token failed verification'", s.subject);
+
+                            /* Update storage */
                             storage.get().removeSession();
-                            audit.errorf ("Login failed to initiate for subject=%s", s.subject);
+                            
+                            /* Return with the error */
                             rr = ResponseBuilder.create (StatusCode.FORBIDDEN).
                                 entity (new Error ("Refreshed token failed token verification"));                            
                         }
@@ -204,10 +215,16 @@ public class Resource {
 
                     } else {
 
-                        storage.get().removeSession();
+                        /* Log it */
                         log.info ("Unable to refresh the access token");
-                        audit.errorf ("Login failed to initiate for subject=%s", s.subject);
-                        rr = ResponseBuilder.create (StatusCode.FORBIDDEN).entity (new Error ("Unable to refresh access token"));
+                        audit.errorf ("Login failed subject=%s, reason='Unable to refresh access token'", s.subject);
+
+                        /* Update storage */
+                        storage.get().removeSession();
+
+                        /* Return with the error */
+                        rr = ResponseBuilder.create (StatusCode.FORBIDDEN)
+                            .entity (new Error ("Unable to refresh access token"));
 
                     }
 
@@ -217,8 +234,12 @@ public class Resource {
 
                 /* Not a valid session */
                 log.info ("No access token present in the session information");
+                audit.errorf ("Login failed reason='No access token present in the session information'");
+
+                /* Remove the session */
                 storage.get().removeSession();
-                audit.errorf ("Login failed to initiate");
+                
+                /* Return with the error code */
                 rr = ResponseBuilder.create(StatusCode.FORBIDDEN)
                     .entity (new Error ("No access token present in the session information"));
             }
@@ -228,19 +249,29 @@ public class Resource {
             /* Create the session */
             Session ns = new Session();
             ns.redirect_uri = redirect_uri!=null?redirect_uri:config.getApplicationURL();
-
-            /* Store the session */
             storage.get().addSession(ns);
             MDC.put("SessionKey", ns.id);
 
             /* Create the redirect to the login page */
             SessionKey key = storage.get().getSessionKey();
             if (key != null) {
-                audit.infof ("Login initiated for unknown subject");
+
+                /* Log it */
+                audit.infof ("Login initiated state=%s, reason='No precious session exists'", key.id);
+
+                /* Redirect to login page */
                 rr = ResponseBuilder.create(StatusCode.FOUND).location (config.buildRedirectToLogin (key.id));
+
             } else {
+
+                /* Log it */
                 log.warn("Not able to generate key, unable to initiate login sequence");
-                audit.errorf ("Login failed to initiate for unknown subject");
+                audit.errorf ("Login failed state=%s, reason='Failed to generate session key'", ns.id);
+
+                /* Remove the session */
+                storage.get().removeSession();
+
+                /* Internal server error */
                 rr = ResponseBuilder.create(StatusCode.INTERNAL_SERVER_ERROR)
                     .entity (new Error ("Unable to initiate login sequence, unable to generate key"));
             }
@@ -277,11 +308,11 @@ public class Resource {
     {
         ResponseBuilder<Object> rr = null;
 
-        /* Loggable information */
+        /* Keeping the request logging together */
         MDC.put("RequestID", SessionHelper.generateRandomUUID());
 
         /* Validate our request */
-        if (state ==null) {
+        if (state == null) {
             log.info ("Missing state parameter");
             audit.error("Login failed");
             rr = ResponseBuilder.create(StatusCode.BAD_REQUEST).entity(new Error ("Malformed request"));
@@ -300,15 +331,16 @@ public class Resource {
         Session s = storage.get().getSession();
         if (s != null) {
 
+            /* Keep the session information together in the request */
             MDC.put("SessionKey", s.id);
 
-            /* Check state */
+            /* Check that the state is correct*/
             if (s.id.compareTo(state) == 0) {
 
                 /* Get the refresh and accesstokens */
                 try {
 
-                    /* Exchange the code to a token */
+                    /* Exchange the code to the acccess, id and refresh tokens */
                     Tokens t = tokenService.token(config.getOIDCClient(), 
                         config.getCallbackURL().toString(), 
                         "authorization_code", 
@@ -316,14 +348,18 @@ public class Resource {
                         config.getOIDCSecret(), 
                         null);
 
-                    /* Validate the response */
+                    /* Validate the response, we only support Bearer tokens */
                     if (t.token_type.compareTo("Bearer")!=0) {
 
-                        /* We only support Bearer */
+                        /* Log it */
                         log.warnf ("We only support Bearer token type, not %s", t.token_type);
-                        audit.error("Login failed");
+                        audit.error ("Login failed");
+
+                        /* Update the session */
                         storage.get().removeSession();
                         s = null;
+
+                        /* Return with the error */
                         rr = ResponseBuilder.create(StatusCode.NOT_IMPLEMENTED).entity(new Error ("Unsupported token type "+t.token_type));
 
                     } else {
@@ -339,20 +375,23 @@ public class Resource {
                             s.refresh_token = t.refresh_token.orElse(null);
                             s.id_token = t.id_token;
                             s.subject = jwt.getSubject();
-
-                            /* Redirect us to the application */
                             if (s.redirect_uri == null)
                                 s.redirect_uri = config.getApplicationURL();
-                            rr = ResponseBuilder.create (StatusCode.FOUND).location (URI.create(s.redirect_uri));
-
-                            /* Update the session */
                             storage.get().updateSession(s);
+                            
+                            /* Redirect us to the application */
+                            rr = ResponseBuilder.create (StatusCode.FOUND).location (URI.create(s.redirect_uri));
 
                         } else {
 
-                            storage.get().removeSession();
+                            /* Log it */
                             audit.error ("Login failed, unable to verify access token");
                             log.info ("Unable to verify the access token");
+
+                            /* Update the session */
+                            storage.get().removeSession();
+
+                            /* Reurn with the error */
                             rr = ResponseBuilder.create (StatusCode.FORBIDDEN).entity (new Error ("Unable to verify access token"));
 
                         }
@@ -361,31 +400,44 @@ public class Resource {
                     
                 } catch (ClientWebApplicationException cwe) {
 
-                    /* Callback without a valid session */
+                    /* Log it */
                     log.info ("Unable to exchange the code for the access token");
                     log.info (cwe.getMessage());
                     audit.errorf ("Login failed, code exchange failed, state=%s", state);
+
+                    /* Update storage */
                     storage.get().removeSession();
                     s = null;
+
+                    /* Return with the error, we could not exchange the code with the token */
                     rr = ResponseBuilder.create (StatusCode.FORBIDDEN).entity (new Error ("Unable to get access token"));
 
                 }
 
             } else {
 
+                /* Log it */
                 log.infof ("State do not align with session key, state=%s", state);
                 audit.errorf ("Login failed, state do not align with session key, state=%s", state);
+
+                /* Update the storage */
                 storage.get().removeSession();
                 s = null;
+
+                /* return with the error */
                 rr = ResponseBuilder.create (StatusCode.FORBIDDEN).entity (new Error ("State and session do not match"));
             }
 
         } else {
 
-            /* Callback without a valid session */
+            /* Log it */
             log.infof ("No session found, state=%s", state);
             audit.error ("Callback with no session");
+
+            /* Remove the session from storage */
             storage.get().removeSession();
+
+            /* Return with the error, sessio is not found */
             rr = ResponseBuilder.create (StatusCode.NOT_FOUND).entity (new Error ("Session not found"));
 
         }

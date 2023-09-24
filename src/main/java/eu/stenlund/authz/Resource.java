@@ -118,7 +118,8 @@ public class Resource {
     }
 
     /**
-     * Generates the cookie header value and removes all oidcgk cookies. They do not need to be sent upstream.
+     * Generates the cookie header value and removes all oidcgk cookies. They do not need to be sent upstream
+     * only the other cookies.
      * 
      * @param cookies A collection of cookies
      * @return The cookie header value
@@ -161,27 +162,44 @@ public class Resource {
 
                 if (sessionHelper.verifyToken(s.access_token, s.subject) != null) {
 
+                    /* Log it */
                     audit.infof("Authorized subject=%s, path=%s, method=%s", s.subject, path, method);
+
+                    /* Authorized, so send the token upstream */
                     rr = ResponseBuilder.ok().header("Authorization", "Bearer "+s.access_token);
 
                 } else {
 
+                    /* Log it */
                     log.info ("The access token failed verification for the session");
 
-                    /* it failed to verify, try to refresh it */
+                    /* It failed to verify, try to refresh it */
                     Session ns = refreshSession(s);
                     if (ns != null) {
 
                         /* Did we get a correct token */
                         if (sessionHelper.verifyToken (ns.access_token, ns.subject) != null) {
-                            storage.get().updateSession(ns);
+
+                            /* Log it */
                             audit.infof ("Authorized subject=%s, path=%s, method=%s", ns.subject, path, method);
+
+                            /* Update the session, we have new tokens */
+                            storage.get().updateSession(ns);
+                            
+                            /* Authorized, so send the token upstream */
                             rr = ResponseBuilder.ok().header("Authorization", "Bearer "+s.access_token);
+
                         } else {
-                            audit.errorf("Denied subject=%s, path=%s, method=%s", s.subject, path, method);
-                            log.info ("Refreshed token failed token verification");
+
+                            /* log it, we failed to authorized */
+                            audit.errorf("Denied subject=%s, path=%s, method=%s, reason='Refreshed token failed verification'", s.subject, path, method);
+                            log.info ("Refreshed token failed verification");
+
+                            /* Update the session information */
                             storage.get().removeSession();
                             s = null;
+
+                            /* Return the failure */
                             rr = ResponseBuilder.create (StatusCode.FORBIDDEN).
                                 entity (new Error ("Refreshed token failed token verification"));
 
@@ -190,10 +208,14 @@ public class Resource {
                     } else {
 
                         /* We were not able to refresh the token */
-                        audit.errorf("Denied subject=%s, path=%s, method=%s", s.subject, path, method);
+                        audit.errorf("Denied subject=%s, path=%s, method=%s, reason='Failed to refresh access token'", s.subject, path, method);
                         log.info ("Failed to refresh it, removing current session");
+
+                        /* Update the storage */
                         storage.get().removeSession();
                         s = null;
+
+                        /* return the failure */
                         rr = ResponseBuilder.create (StatusCode.FORBIDDEN).
                             entity (new Error ("Unable to refresh access token"));
 
@@ -203,21 +225,29 @@ public class Resource {
 
             } else {
 
-                /* Not a valid session */
-                audit.errorf("Denied path=%s, method=%s", path, method);
+                /* Log it, we did not get an access token */
+                audit.errorf("Denied path=%s, method=%s, reason='No access token present in the session'", path, method);
                 log.info ("No access token present in the session");
+
+                /* Update storage */
                 storage.get().removeSession();
                 s = null;
-                rr = ResponseBuilder.create (StatusCode.FORBIDDEN).
-                    entity (new Error ("Missing access token"));
+
+                /* Return the failure */
+                rr = ResponseBuilder.create (StatusCode.FORBIDDEN)
+                    .entity (new Error ("Missing access token"));
             }
 
         } else {
 
             /* No session, so we will deny this request */
-            audit.errorf("Denied path=%s, method=%s", path, method);
+            audit.errorf("Denied path=%s, method=%s, reason='No session found in storage'", path, method);
             log.info ("No session found");
+
+            /* Update the storage */
             storage.get().removeSession();
+
+            /* Return with the failure */
             rr = ResponseBuilder.create(StatusCode.UNAUTHORIZED, "No valid session");
         }
 
