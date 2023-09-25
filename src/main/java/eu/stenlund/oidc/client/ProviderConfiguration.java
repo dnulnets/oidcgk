@@ -13,6 +13,7 @@ import java.util.ArrayList;
 public class ProviderConfiguration {
     public String issuer;
     public String authorization_endpoint;
+    public String end_session_endpoint;
     public String token_endpoint;
     public String jwks_uri;
     public ArrayList<String> grant_types_supported;

@@ -74,6 +74,7 @@ public class Configuration {
         log.info ("authorization endpoint = " + providerConfig.authorization_endpoint);
         log.info ("token endpoint = " + providerConfig.token_endpoint);
         log.info ("jwks URI = " + providerConfig.jwks_uri);
+        log.info ("end_session_endpoint = " + providerConfig.end_session_endpoint);
     }
 
     public String getAudience() {
@@ -133,6 +134,10 @@ public class Configuration {
 
     public URI getTokenEndpoint() {
         return URI.create(providerConfig.token_endpoint);
+    }
+
+    public URI getEndSessionEndpoint() {
+        return URI.create(providerConfig.end_session_endpoint);
     }
 
     public URI getJWKSEndpoint() {

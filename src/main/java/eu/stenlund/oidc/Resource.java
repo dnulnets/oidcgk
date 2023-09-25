@@ -5,6 +5,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Cookie;
@@ -20,6 +21,7 @@ import org.jboss.resteasy.reactive.RestResponse.StatusCode;
 import eu.stenlund.Application;
 import eu.stenlund.Configuration;
 import eu.stenlund.Error;
+import eu.stenlund.oidc.client.EndSessionService;
 import eu.stenlund.oidc.client.TokenService;
 import eu.stenlund.oidc.client.Tokens;
 import eu.stenlund.session.storage.IStorage;
@@ -71,6 +73,7 @@ public class Resource {
 
     /* The OIDC internal client */
     private TokenService tokenService = null;
+    private EndSessionService endSessionService = null;
 
     /**
      * Initializes the bean.
@@ -81,9 +84,14 @@ public class Resource {
         /* Create the token service from the well known configuration */
         log.info ("Initializing");
         log.info ("Creating the token service client");
+
         tokenService = QuarkusRestClientBuilder.newBuilder()
             .baseUri(config.getTokenEndpoint())
             .build(TokenService.class);
+
+        endSessionService = QuarkusRestClientBuilder.newBuilder()
+            .baseUri(config.getEndSessionEndpoint())
+            .build(EndSessionService.class);            
     }
 
     /**
@@ -454,4 +462,46 @@ public class Resource {
         return rr.build();
     }
 
+    /**
+     * Logs out the user and clears the session. Note that it does not do any logout on the OIDC Provider.
+     * 
+     * @param httpHeaders The HTTP headers
+     * @param uriInfo The URI information
+     * @return
+     */
+    @Path("logout")
+    @GET
+    @Produces("text/html")
+    public RestResponse<Object> logout(HttpHeaders httpHeaders, @Context UriInfo uriInfo)
+    {
+        ResponseBuilder<Object> rr = null;
+
+        /* get hold of the session */
+        storage.get().setCookies(httpHeaders.getCookies().values());
+        Session s = storage.get().getSession();
+        if (s != null) {
+
+            audit.infof("Logout subject=%s",s.id);
+            rr = ResponseBuilder.ok();
+
+        } else {
+
+            audit.info("Logout, unknown subject");
+            rr = ResponseBuilder.ok();
+
+        }
+
+        storage.get().removeSession();
+
+        /* Add some default headers */
+        rr.header("cache-control", "no-store, must-revalidate, max-age=0").
+            header("content-security-policy", "frame-src 'self'; frame-ancestors 'self'; object-src 'none';");
+
+        /* Add the cookies, if any */
+        for (Cookie nc : storage.get().getCookies()) {
+            rr.cookie((NewCookie)nc);
+        }
+
+        return rr.build();
+    }
 }
