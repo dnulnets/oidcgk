@@ -59,6 +59,7 @@ The following versions are used for runtime, development and testing. It might w
 ### Things to add or do
 * Performance tuning and deployment scenarios.
 * Add and option for fine grained authorization in the same ways as [Authz](https://github.com/dnulnets/authz) for the istio extension authorization.
+* Do not allow any redirect_uri for the login endpoint.
 
 ## Kubernetes setup
 
