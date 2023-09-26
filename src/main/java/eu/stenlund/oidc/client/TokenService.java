@@ -22,6 +22,7 @@ public interface TokenService {
                 @FormParam("grant_type") String grant_type,
                 @FormParam("code") String code,
                 @FormParam("client_secret") String client_secret,
+                @FormParam("code_verifier") String code_verifier,
                 @FormParam("refresh_token") String refresh_token);
 
 }

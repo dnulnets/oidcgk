@@ -112,7 +112,8 @@ public class Resource {
                     null, 
                     "refresh_token", 
                     null, 
-                    config.getOIDCSecret(), 
+                    config.getOIDCSecret(),
+                    null,
                     s.refresh_token);
 
                 /* Update the session */
@@ -216,8 +217,7 @@ public class Resource {
                             storage.get().removeSession();
                             
                             /* Return with the error */
-                            rr = ResponseBuilder.create (StatusCode.FORBIDDEN).
-                                entity (new Error ("Refreshed token failed token verification"));                            
+                            rr = ResponseBuilder.create (StatusCode.FORBIDDEN);
                         }
 
 
@@ -231,8 +231,7 @@ public class Resource {
                         storage.get().removeSession();
 
                         /* Return with the error */
-                        rr = ResponseBuilder.create (StatusCode.FORBIDDEN)
-                            .entity (new Error ("Unable to refresh access token"));
+                        rr = ResponseBuilder.create (StatusCode.FORBIDDEN);
 
                     }
 
@@ -248,8 +247,7 @@ public class Resource {
                 storage.get().removeSession();
                 
                 /* Return with the error code */
-                rr = ResponseBuilder.create(StatusCode.FORBIDDEN)
-                    .entity (new Error ("No access token present in the session information"));
+                rr = ResponseBuilder.create(StatusCode.FORBIDDEN);
             }
 
         } else {
@@ -257,6 +255,10 @@ public class Resource {
             /* Create the session */
             Session ns = new Session();
             ns.redirect_uri = redirect_uri!=null?redirect_uri:config.getApplicationURL();
+
+            /* Create the PKCE verifier */
+            ns.code_verifier = sessionHelper.generateCodeVerifier();
+
             storage.get().addSession(ns);
             MDC.put("SessionKey", ns.id);
 
@@ -267,8 +269,11 @@ public class Resource {
                 /* Log it */
                 audit.infof ("Login initiated state=%s, reason='No precious session exists'", key.id);
 
+                /* Create the PKCE code challenge */
+                String code_challenge = sessionHelper.generateCodeChallenge(ns.code_verifier);
+
                 /* Redirect to login page */
-                rr = ResponseBuilder.create(StatusCode.FOUND).location (config.buildRedirectToLogin (key.id));
+                rr = ResponseBuilder.create(StatusCode.FOUND).location (config.buildRedirectToLogin (key.id, code_challenge));
 
             } else {
 
@@ -280,8 +285,7 @@ public class Resource {
                 storage.get().removeSession();
 
                 /* Internal server error */
-                rr = ResponseBuilder.create(StatusCode.INTERNAL_SERVER_ERROR)
-                    .entity (new Error ("Unable to initiate login sequence, unable to generate key"));
+                rr = ResponseBuilder.create(StatusCode.INTERNAL_SERVER_ERROR);
             }
         }
 
@@ -323,14 +327,14 @@ public class Resource {
         if (state == null) {
             log.info ("Missing state parameter");
             audit.error("Login failed");
-            rr = ResponseBuilder.create(StatusCode.BAD_REQUEST).entity(new Error ("Malformed request"));
+            rr = ResponseBuilder.create(StatusCode.BAD_REQUEST);
             return rr.build();
         }
 
         if (code == null) {
             log.infof ("Missing code parameter, state=%s", state);
             audit.error("Login failed");
-            rr = ResponseBuilder.create(StatusCode.BAD_REQUEST).entity(new Error ("Malformed request"));
+            rr = ResponseBuilder.create(StatusCode.BAD_REQUEST);
             return rr.build();  
         }
 
@@ -353,8 +357,12 @@ public class Resource {
                         config.getCallbackURL().toString(), 
                         "authorization_code", 
                         code, 
-                        config.getOIDCSecret(), 
+                        config.getOIDCSecret(),
+                        s.code_verifier,
                         null);
+
+                    /* No need to holkd on to the verifier any longer */
+                    s.code_verifier = null;
 
                     /* Validate the response, we only support Bearer tokens */
                     if (t.token_type.compareTo("Bearer")!=0) {
@@ -368,7 +376,7 @@ public class Resource {
                         s = null;
 
                         /* Return with the error */
-                        rr = ResponseBuilder.create(StatusCode.NOT_IMPLEMENTED).entity(new Error ("Unsupported token type "+t.token_type));
+                        rr = ResponseBuilder.create(StatusCode.NOT_IMPLEMENTED);
 
                     } else {
 
@@ -400,7 +408,7 @@ public class Resource {
                             storage.get().removeSession();
 
                             /* Reurn with the error */
-                            rr = ResponseBuilder.create (StatusCode.FORBIDDEN).entity (new Error ("Unable to verify access token"));
+                            rr = ResponseBuilder.create (StatusCode.FORBIDDEN);
 
                         }
 
@@ -418,7 +426,7 @@ public class Resource {
                     s = null;
 
                     /* Return with the error, we could not exchange the code with the token */
-                    rr = ResponseBuilder.create (StatusCode.FORBIDDEN).entity (new Error ("Unable to get access token"));
+                    rr = ResponseBuilder.create (StatusCode.FORBIDDEN);
 
                 }
 
@@ -433,7 +441,7 @@ public class Resource {
                 s = null;
 
                 /* return with the error */
-                rr = ResponseBuilder.create (StatusCode.FORBIDDEN).entity (new Error ("State and session do not match"));
+                rr = ResponseBuilder.create (StatusCode.FORBIDDEN);
             }
 
         } else {
@@ -446,7 +454,7 @@ public class Resource {
             storage.get().removeSession();
 
             /* Return with the error, sessio is not found */
-            rr = ResponseBuilder.create (StatusCode.NOT_FOUND).entity (new Error ("Session not found"));
+            rr = ResponseBuilder.create (StatusCode.NOT_FOUND);
 
         }
 

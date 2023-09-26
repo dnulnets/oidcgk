@@ -36,12 +36,12 @@ public class Configuration {
     @ConfigProperty(name = "oidcgk.cookie.maxage", defaultValue = "10800") int cMaxAge;
 
     /* OIDC Provider configuration */
-    @ConfigProperty(name = "oidcgk.oidc.url") String kcURL;
-    @ConfigProperty(name = "oidcgk.oidc.realm") String kcRealm;
-    @ConfigProperty(name = "oidcgk.oidc.client") String kcClient;
-    @ConfigProperty(name = "oidcgk.oidc.secret") String kcSecret;
-    @ConfigProperty(name = "oidcgk.oidc.scope") String kcScope;
-    @ConfigProperty(name = "oidcgk.oidc.audience") String kcAudience;
+    @ConfigProperty(name = "oidcgk.oidc.url") String oidcURL;
+    @ConfigProperty(name = "oidcgk.oidc.realm") String oidcRealm;
+    @ConfigProperty(name = "oidcgk.oidc.client") String oidcClient;
+    @ConfigProperty(name = "oidcgk.oidc.secret") String oidcSecret;
+    @ConfigProperty(name = "oidcgk.oidc.scope") String oidcScope;
+    @ConfigProperty(name = "oidcgk.oidc.audience") String oidcAudience;
 
     /* The base URL for the application root */
     @ConfigProperty(name = "oidcgk.base.url") String baseURL;
@@ -61,7 +61,7 @@ public class Configuration {
     /* Initialize the application */
     @PostConstruct 
     void init() {
-        log.info ("Build the configuration for " + kcRealm);
+        log.info ("Build the configuration for " + oidcRealm);
 
         /* Create the discovery service */
         ProviderConfigurationService providerConfigurationService = QuarkusRestClientBuilder.newBuilder()
@@ -78,11 +78,11 @@ public class Configuration {
     }
 
     public String getAudience() {
-        return kcAudience;
+        return oidcAudience;
     }
 
     public Set<String> getAudienceSet() {
-        Set<String> ss = new HashSet<String>(Arrays.asList(kcAudience.trim().split("\\s+")));
+        Set<String> ss = new HashSet<String>(Arrays.asList(oidcAudience.trim().split("\\s+")));
         return ss;
     }
 
@@ -109,19 +109,19 @@ public class Configuration {
     }
 
     public String getOIDCURL() {
-        return kcURL;
+        return oidcURL;
     }
 
     public String getOIDCRealm() {
-        return kcRealm;
+        return oidcRealm;
     }
 
     public String getOIDCClient() {
-        return kcClient;
+        return oidcClient;
     }
 
     public String getOIDCSecret() {
-        return kcSecret;
+        return oidcSecret;
     }
 
     public String getBaseURL() {
@@ -154,16 +154,18 @@ public class Configuration {
      * @param state Our state
      * @return A URI to the login service
      */
-    public URI buildRedirectToLogin(String state)
+    public URI buildRedirectToLogin(String state, String code_challenge)
     {
 
         URI uri = UriBuilder.fromUri(providerConfig.authorization_endpoint).
             queryParam("client_id","{client}").
             queryParam("response_type", "code").
+            queryParam("code_challenge", "{code_challenge}").
+            queryParam("code_challenge_method", "S256").
             queryParam("state", "{state}").
-            queryParam("scope", "openid " + kcScope).
+            queryParam("scope", oidcScope!=null?"openid " + oidcScope:"oidc").
             queryParam("redirect_uri", "{redirect}").
-            build(kcClient, state, getCallbackURL().toString());
+            build(oidcClient, code_challenge, state, getCallbackURL().toString());
 
         return uri;
     }
@@ -187,9 +189,9 @@ public class Configuration {
      */
     public URI getOIDCBaseURL ()
     {
-        URI uri = UriBuilder.fromUri(kcURL).
+        URI uri = UriBuilder.fromUri(oidcURL).
             path("realms/{realm}").
-            build(kcRealm);
+            build(oidcRealm);
 
         return uri;
     }

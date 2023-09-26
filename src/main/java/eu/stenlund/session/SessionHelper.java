@@ -5,8 +5,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.UnsupportedEncodingException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -179,6 +181,42 @@ public class SessionHelper {
         if (bCrypto)
             sk.cryptoKey = generateRandomEncryptionKey();
         return sk;
+    }
+
+    /**
+     * Generate the code verifier for PKCE
+     * 
+     * @return A random code verifier
+     */
+    public String generateCodeVerifier ()
+    {
+        byte[] code = new byte[32];
+        secureRandom.nextBytes(code);
+        String verifier = Base64.getUrlEncoder().withoutPadding().encodeToString(code);
+        return verifier;     
+    }
+
+    public String generateCodeChallenge (String verifier)
+    {
+        byte[] bytes;
+        MessageDigest md;
+        String challenge = null;
+
+        try {
+            bytes = verifier.getBytes("US-ASCII");
+            md = MessageDigest.getInstance("SHA-256");
+            md.update(bytes, 0, bytes.length);
+            byte[] digest = md.digest();
+            challenge = Base64.getUrlEncoder().withoutPadding().encodeToString(digest);            
+        } catch (UnsupportedEncodingException e) {
+            log.error("Unable to encode the PKCE verifier");
+            log.error (e.getMessage());
+        } catch (NoSuchAlgorithmException e) {
+            log.error ("Unable to create message digest algorithm");
+            log.error (e.getMessage());
+        }
+
+        return challenge;
     }
 
     /**
@@ -507,13 +545,14 @@ public class SessionHelper {
         try {
             jwt = jwtParser.parse(token, jaci);
 
-            /* Same subject as the session says it should be? */
+            /* Chek that it is the same subject as the session information in the token*/
             if (subject != null) {
                 if (subject.compareTo(jwt.getSubject())!=0) {
                     log.infof ("Expected subject %s got %s in access token", subject, jwt.getSubject());
                     jwt = null;
                 }
             }
+            
             
         } catch (ParseException e) {
             log.infof ("Uable to parse token for subject=%s", subject);

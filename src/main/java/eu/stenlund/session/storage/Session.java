@@ -46,10 +46,15 @@ public class Session implements Serializable {
      */
     public String id_token = null;
 
+    /**
+     * The code verifier for the PKCE
+     */
+    public String code_verifier = null;
+
     @Override
     public String toString ()
     {
-        return String.format ("{id=%s,subject=%s,redirect_url=%s,access_token=%s,refresh_token=%s,id_token=%s}", id, subject, redirect_uri, access_token, refresh_token, id_token);
+        return String.format ("{id=%s,subject=%s,redirect_url=%s,access_token=%s,refresh_token=%s,id_token=%s, code_verifier=%s}", id, subject, redirect_uri, access_token, refresh_token, id_token, code_verifier);
     }
 
 }

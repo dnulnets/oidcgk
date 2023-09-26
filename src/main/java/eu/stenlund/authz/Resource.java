@@ -93,7 +93,8 @@ public class Resource {
                     null, 
                     "refresh_token", 
                     null, 
-                    config.getOIDCSecret(), 
+                    config.getOIDCSecret(),
+                    null,
                     s.refresh_token);
 
                 /* Update the session */
@@ -200,8 +201,7 @@ public class Resource {
                             s = null;
 
                             /* Return the failure */
-                            rr = ResponseBuilder.create (StatusCode.FORBIDDEN).
-                                entity (new Error ("Refreshed token failed token verification"));
+                            rr = ResponseBuilder.create (StatusCode.FORBIDDEN);
 
                         }
 
@@ -216,8 +216,7 @@ public class Resource {
                         s = null;
 
                         /* return the failure */
-                        rr = ResponseBuilder.create (StatusCode.FORBIDDEN).
-                            entity (new Error ("Unable to refresh access token"));
+                        rr = ResponseBuilder.create (StatusCode.FORBIDDEN);
 
                     }
 
@@ -234,8 +233,7 @@ public class Resource {
                 s = null;
 
                 /* Return the failure */
-                rr = ResponseBuilder.create (StatusCode.FORBIDDEN)
-                    .entity (new Error ("Missing access token"));
+                rr = ResponseBuilder.create (StatusCode.FORBIDDEN);
             }
 
         } else {
@@ -248,7 +246,7 @@ public class Resource {
             storage.get().removeSession();
 
             /* Return with the failure */
-            rr = ResponseBuilder.create(StatusCode.UNAUTHORIZED, "No valid session");
+            rr = ResponseBuilder.create(StatusCode.UNAUTHORIZED);
         }
 
         /* Add some default headers */
