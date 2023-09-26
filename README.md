@@ -141,6 +141,7 @@ Contains configuration for where the OIDC provider is located and which realm an
 |oidcgk.oidc.client|The confidential client to use during configuration|None|
 |oidcgk.oidc.secret|The secret of the confidential client.|None|
 |oidcgk.oidc.audience|The audience required in the token when authenticated.|None|
+|oidcgk.oidc.scope|The scope requested by this gatekeeper. The oidc scope is always added.|None|
 
 #### Cookie configuration (oidcgk.cookie)
 The configuration of the cookies used for storage.
