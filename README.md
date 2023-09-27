@@ -142,7 +142,7 @@ Contains configuration for where the OIDC provider is located and which realm an
 |oidcgk.oidc.secret|The secret of the confidential client.|None|
 |oidcgk.oidc.audience|The audience required in the token when authenticated.|None|
 |oidcgk.oidc.scope|The scope requested by this gatekeeper. The oidc scope is always added.|None|
-|oidcgk.oidc.pkce|If PKCE is to be used, true or false.|true|
+|oidcgk.oidc.pkce|If PKCE is to be used, true or false.|false|
 
 #### Cookie configuration (oidcgk.cookie)
 The configuration of the cookies used for storage.
