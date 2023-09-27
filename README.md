@@ -58,6 +58,7 @@ The following versions are used for runtime, development and testing. It might w
 * Performance tuning and deployment scenarios.
 * Add and option for fine grained authorization in the same ways as [Authz](https://github.com/dnulnets/authz) for the istio extension authorization.
 * Do not allow any redirect_uri for the login endpoint.Let it be checked by a regexp or similar.
+* The id token is stored in the session information but is not used, should we expose an endpoin that extracts it?
 
 ## Kubernetes setup for istio
 
