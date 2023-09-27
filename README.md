@@ -7,16 +7,14 @@ The gatekeeper acts as a confidential client and uses the authorization code flo
 
 The gatekeeper can protect any type of server side resources, such as API:s, static webpages and can also be used by SPA:s to make it simpler to handle authentication and authorization.
 
-**NOTE!** This is work in progress but it is fully functional for experimental use for now.
-
 ## Introduction
 For each HTTP request the gatekeeper looks up the session information and extracts the access token. It then sends it upstream to the final
 destination (**Authorization: Bearer xxxx** header). It also refreshes the access token if needed.
 
-The gatekeeper provides three endpoints. One for logging in and the callback from the login and one for logging out. It handles the OIDC providers authentication and authorization endpoints, cookies and backend storage for the session information.
+The gatekeeper provides three endpoints. One for logging in, one for the callback from the login and one for logging out. It handles the OIDC providers authentication and authorization endpoints, cookies and backend storage for the session information.
 
 ### Session information
-The session information contains the session id, the access token, the refresh token and the id token. If stored in the browser it is encrypted with the gatekeepers keys, and if stored in the backend it is encrypted with a random generated key stored in a cookie and is unique for the session.
+The session information contains the session id, the access token, the refresh token and the id token. If stored in the browser it is encrypted with the gatekeepers keys, and if stored in the backend it is encrypted with a random generated key stored in the browser as a cookie and is unique for the session.
 ### The use of cookies and backend storage
 The gatekeeper relies on the use of secure HTTP-only cookies and it uses them in two different ways depending on the selected method for storage.
 #### Browser storage
@@ -24,7 +22,7 @@ In browser storage mode i.e. **browser**, the entire session information is stor
 * The drawback is that the requests from the browser can be really big because of the cookies size.
 * The advantage is that you will need no backend storage and you can easily load balance between multiple gatekeepers.
 #### Backend storage
-In backend storage mode i.e. **memory**, **redis** or **infinispan**, a session identifier and the backend storage encryption key is stored in the cookies. The actual session information is stored in the backend. 
+In backend storage mode i.e. **memory**, **redis** or **infinispan**, a session identifier and the backend storage encryption key is stored in the cookies. The actual session information is stored encrypted in the backend. 
 * The advantage is that the size of the requst from the browser will be small.
 
 Currently there are three different backend storages implemented:
@@ -48,7 +46,7 @@ When the user has successfully logged in at the OIDC provider it will redirect t
 #### /oidc/logout
 This endpoint logs out the user and destroys the session information.
 #### /*
-This endpoint is the PDP and verifes the session information, extract the access token and refreshes it with the OIDC provider if needed. The token is also sent back in the response as an **authorization**-header and any **set-cookie**-headers with a 200 OK if it will allow it to proceed.
+This endpoint is the PDP and verifes the session information, extract the access token and refreshes it with the OIDC provider if needed. The token is also sent back in the response as an **authorization**-header and any **set-cookie**-headers with a 200 OK if it will allow it to proceed. You must not expose this endpoint to the internet, it is only meant for internal usage.
 
 ### Runtime and development versions
 The following versions are used for runtime, development and testing. It might work perfectly fine with other versions as well but it has not been verified.
@@ -59,9 +57,9 @@ The following versions are used for runtime, development and testing. It might w
 ### Things to add or do
 * Performance tuning and deployment scenarios.
 * Add and option for fine grained authorization in the same ways as [Authz](https://github.com/dnulnets/authz) for the istio extension authorization.
-* Do not allow any redirect_uri for the login endpoint.
+* Do not allow any redirect_uri for the login endpoint.Let it be checked by a regexp or similar.
 
-## Kubernetes setup
+## Kubernetes setup for istio
 
 ### External extension provider
 Istio has to be configured to use the gatekeeper as the extension provider to be able to use it as a CUSTOM action in the AuthorizationPolicy.
@@ -158,7 +156,7 @@ The configuration of the cookies used for storage.
 The configuration of the redis client. Only useful if the storage **redis** is selected. See the quarkus documentation on all of the configuration properties of the redis client.
 |Property|Description|Default |
 |---|---|---|
-|quarkus.redis.oidcgk.hosts|The URL to the redis server. It must be of the format **redis://my-redis:6379**|None|
+|quarkus.redis.oidcgk.hosts|The URL to the redis servers. It must be of the format **redis://my-redis:6379**|None|
 
 #### Infinispan configuration
 The configuration of the infinispan client. Only useful if the storage **infinispan** is selected. See the quarkus documentation on all of the configuration properties of the infinispan client.
