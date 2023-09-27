@@ -138,6 +138,26 @@ public class Resource {
     }
 
     /**
+     * Add some default headers and handle cookies.
+     * 
+     * @param rr The responsebuilder for the response
+     * @return The response
+     */
+    private RestResponse<Object> finalizeResponse (ResponseBuilder<Object> rr)
+    {
+        /* Add some default headers */
+        rr.header("cache-control", "no-store, must-revalidate, max-age=0").
+            header("content-security-policy", "frame-src 'self'; frame-ancestors 'self'; object-src 'none';");
+
+        /* Add the cookies, if any */
+        for (Cookie nc : storage.get().getCookies()) {
+            rr.cookie((NewCookie)nc);
+        }
+
+        return rr.build();
+    }
+
+    /**
      * Handles the login to the OIDC-provider.
      * 
      * @param httpHeaders The HTTP headers
@@ -157,8 +177,6 @@ public class Resource {
 
         /* Get our storage */
         storage.get().setCookies(httpHeaders.getCookies().values());
-
-        /* Did we get a session cookie */
         Session s = storage.get().getSession();
         if (s!=null) {
 
@@ -257,7 +275,9 @@ public class Resource {
             ns.redirect_uri = redirect_uri!=null?redirect_uri:config.getApplicationURL();
 
             /* Create the PKCE verifier */
-            ns.code_verifier = sessionHelper.generateCodeVerifier();
+            ns.code_verifier = null;
+            if (config.getOIDCPKCE())
+                ns.code_verifier = sessionHelper.generateCodeVerifier();
 
             storage.get().addSession(ns);
             MDC.put("SessionKey", ns.id);
@@ -267,10 +287,12 @@ public class Resource {
             if (key != null) {
 
                 /* Log it */
-                audit.infof ("Login initiated state=%s, reason='No precious session exists'", key.id);
+                audit.infof ("Login initiated state=%s, reason='No previous session exists'", key.id);
 
                 /* Create the PKCE code challenge */
-                String code_challenge = sessionHelper.generateCodeChallenge(ns.code_verifier);
+                String code_challenge = null;
+                if (config.getOIDCPKCE())
+                    code_challenge = sessionHelper.generateCodeChallenge(ns.code_verifier);
 
                 /* Redirect to login page */
                 rr = ResponseBuilder.create(StatusCode.FOUND).location (config.buildRedirectToLogin (key.id, code_challenge));
@@ -289,16 +311,7 @@ public class Resource {
             }
         }
 
-        /* Add some default headers */
-        rr.header("cache-control", "no-store, must-revalidate, max-age=0").
-            header("content-security-policy", "frame-src 'self'; frame-ancestors 'self'; object-src 'none';");
-
-        /* Add the cookies, if any */
-        for (Cookie nc : storage.get().getCookies()) {
-            rr.cookie((NewCookie)nc);
-        }
-
-        return rr.build();
+        return finalizeResponse(rr);
     }
 
     /**
@@ -316,31 +329,46 @@ public class Resource {
     public RestResponse<Object> callback(HttpHeaders httpHeaders, @Context UriInfo uriInfo, 
         @QueryParam(value="state") String state ,
         @QueryParam(value="code") String code,
-        @QueryParam(value="session_state") String session_state) 
+        @QueryParam(value="session_state") String session_state,
+        @QueryParam(value="error") String error,
+        @QueryParam(value="error_description") String error_description) 
     {
         ResponseBuilder<Object> rr = null;
 
         /* Keeping the request logging together */
         MDC.put("RequestID", SessionHelper.generateRandomUUID());
 
+        /* Initialize the storage */
+        storage.get().setCookies(httpHeaders.getCookies().values());
+        Session s = storage.get().getSession();
+
+        /* Are we in error ? */
+        if (error !=null) {
+            log.infof("Error %s in callback = %s", error, error_description!=null?error_description:"No description");
+            audit.errorf("Login failed, %s", error);
+            storage.get().removeSession();
+            rr = ResponseBuilder.create (StatusCode.FORBIDDEN);
+            return finalizeResponse(rr);
+        }
+
         /* Validate our request */
         if (state == null) {
             log.info ("Missing state parameter");
             audit.error("Login failed");
+            storage.get().removeSession();
             rr = ResponseBuilder.create(StatusCode.BAD_REQUEST);
-            return rr.build();
+            return finalizeResponse(rr);
         }
 
         if (code == null) {
             log.infof ("Missing code parameter, state=%s", state);
             audit.error("Login failed");
+            storage.get().removeSession();
             rr = ResponseBuilder.create(StatusCode.BAD_REQUEST);
-            return rr.build();  
+            return finalizeResponse(rr);
         }
 
-        /* get hold of the session */
-        storage.get().setCookies(httpHeaders.getCookies().values());
-        Session s = storage.get().getSession();
+        /* handle that the session exists */
         if (s != null) {
 
             /* Keep the session information together in the request */
@@ -361,7 +389,7 @@ public class Resource {
                         s.code_verifier,
                         null);
 
-                    /* No need to holkd on to the verifier any longer */
+                    /* No need to hold on to the verifier any longer */
                     s.code_verifier = null;
 
                     /* Validate the response, we only support Bearer tokens */
@@ -450,6 +478,7 @@ public class Resource {
             log.infof ("No session found, state=%s", state);
             audit.error ("Callback with no session");
 
+
             /* Remove the session from storage */
             storage.get().removeSession();
 
@@ -458,16 +487,7 @@ public class Resource {
 
         }
 
-        /* Add some default headers */
-        rr.header("cache-control", "no-store, must-revalidate, max-age=0").
-            header("content-security-policy", "frame-src 'self'; frame-ancestors 'self'; object-src 'none';");
-
-        /* Add the cookies, if any */
-        for (Cookie nc : storage.get().getCookies()) {
-            rr.cookie((NewCookie)nc);
-        }
-
-        return rr.build();
+        return finalizeResponse(rr);
     }
 
     /**
@@ -501,15 +521,6 @@ public class Resource {
 
         storage.get().removeSession();
 
-        /* Add some default headers */
-        rr.header("cache-control", "no-store, must-revalidate, max-age=0").
-            header("content-security-policy", "frame-src 'self'; frame-ancestors 'self'; object-src 'none';");
-
-        /* Add the cookies, if any */
-        for (Cookie nc : storage.get().getCookies()) {
-            rr.cookie((NewCookie)nc);
-        }
-
-        return rr.build();
+        return finalizeResponse(rr);
     }
 }

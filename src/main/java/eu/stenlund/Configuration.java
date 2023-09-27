@@ -42,6 +42,7 @@ public class Configuration {
     @ConfigProperty(name = "oidcgk.oidc.secret") String oidcSecret;
     @ConfigProperty(name = "oidcgk.oidc.scope") String oidcScope;
     @ConfigProperty(name = "oidcgk.oidc.audience") String oidcAudience;
+    @ConfigProperty(name = "oidcgk.oidc.pkce", defaultValue = "false") Boolean oidcPKCE;
 
     /* The base URL for the application root */
     @ConfigProperty(name = "oidcgk.base.url") String baseURL;
@@ -104,6 +105,11 @@ public class Configuration {
         return cName;
     }
 
+    public Boolean getOIDCPKCE()
+    {
+        return oidcPKCE;
+    }
+
     public String getCookieDomain () {
         return cDomain;
     }
@@ -157,15 +163,19 @@ public class Configuration {
     public URI buildRedirectToLogin(String state, String code_challenge)
     {
 
-        URI uri = UriBuilder.fromUri(providerConfig.authorization_endpoint).
+        UriBuilder urib = UriBuilder.fromUri(providerConfig.authorization_endpoint).
             queryParam("client_id","{client}").
-            queryParam("response_type", "code").
-            queryParam("code_challenge", "{code_challenge}").
-            queryParam("code_challenge_method", "S256").
+            queryParam("response_type", "code");
+            
+        if (code_challenge != null)
+            urib = urib.queryParam("code_challenge", code_challenge).
+                queryParam("code_challenge_method", "S256");
+
+        URI uri = urib.
             queryParam("state", "{state}").
             queryParam("scope", oidcScope!=null?"openid " + oidcScope:"oidc").
             queryParam("redirect_uri", "{redirect}").
-            build(oidcClient, code_challenge, state, getCallbackURL().toString());
+            build(oidcClient, state, getCallbackURL().toString());
 
         return uri;
     }

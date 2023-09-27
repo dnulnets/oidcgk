@@ -555,7 +555,7 @@ public class SessionHelper {
             
             
         } catch (ParseException e) {
-            log.infof ("Uable to parse token for subject=%s", subject);
+            log.infof ("Unable to parse token for subject=%s", subject);
             log.info (e.getMessage());
             jwt = null;
         }
