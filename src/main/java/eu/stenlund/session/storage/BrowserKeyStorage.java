@@ -4,7 +4,6 @@ import org.jboss.logging.Logger;
 
 import eu.stenlund.Configuration;
 import eu.stenlund.session.SessionHelper;
-import io.quarkus.arc.lookup.LookupIfProperty;
 import io.quarkus.arc.lookup.LookupUnlessProperty;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;

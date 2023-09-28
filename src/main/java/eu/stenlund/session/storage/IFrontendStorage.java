@@ -2,7 +2,6 @@ package eu.stenlund.session.storage;
 
 import java.util.Collection;
 
-import jakarta.enterprise.context.RequestScoped;
 import jakarta.ws.rs.core.Cookie;
 
 /**

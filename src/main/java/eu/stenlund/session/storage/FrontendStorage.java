@@ -1,7 +1,5 @@
 package eu.stenlund.session.storage;
 
-import jakarta.enterprise.context.RequestScoped;
-
 /**
  * A class for storage at the browser regardless of the type of the POJO to store. It only contains
  * generic functions.

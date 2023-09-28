@@ -20,8 +20,6 @@ import org.jboss.resteasy.reactive.RestResponse.StatusCode;
 
 import eu.stenlund.Application;
 import eu.stenlund.Configuration;
-import eu.stenlund.Error;
-import eu.stenlund.oidc.client.EndSessionService;
 import eu.stenlund.oidc.client.TokenService;
 import eu.stenlund.oidc.client.Tokens;
 import eu.stenlund.session.storage.IStorage;
@@ -30,9 +28,6 @@ import eu.stenlund.session.storage.SessionKey;
 import eu.stenlund.session.SessionHelper;
 import io.quarkus.arc.log.LoggerName;
 import io.quarkus.rest.client.reactive.QuarkusRestClientBuilder;
-import io.smallrye.jwt.auth.principal.JWTAuthContextInfo;
-import io.smallrye.jwt.auth.principal.JWTParser;
-import io.smallrye.jwt.auth.principal.ParseException;
 
 import java.net.URI;
 
@@ -73,7 +68,6 @@ public class Resource {
 
     /* The OIDC internal client */
     private TokenService tokenService = null;
-    private EndSessionService endSessionService = null;
 
     /**
      * Initializes the bean.
@@ -82,16 +76,12 @@ public class Resource {
     void init()
     {
         /* Create the token service from the well known configuration */
-        log.info ("Initializing");
         log.info ("Creating the token service client");
 
         tokenService = QuarkusRestClientBuilder.newBuilder()
             .baseUri(config.getTokenEndpoint())
             .build(TokenService.class);
-
-        endSessionService = QuarkusRestClientBuilder.newBuilder()
-            .baseUri(config.getEndSessionEndpoint())
-            .build(EndSessionService.class);            
+          
     }
 
     /**

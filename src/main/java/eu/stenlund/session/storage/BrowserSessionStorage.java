@@ -8,7 +8,6 @@ import io.quarkus.arc.lookup.LookupIfProperty;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.RequestScoped;
-import jakarta.enterprise.inject.Alternative;
 import jakarta.inject.Inject;
 
 /**

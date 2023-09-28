@@ -15,7 +15,6 @@ import org.jboss.logging.Logger;
 
 import eu.stenlund.Configuration;
 import eu.stenlund.session.SessionHelper;
-import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Cookie;
 

@@ -1,7 +1,5 @@
 package eu.stenlund.session.storage;
 
-import jakarta.enterprise.context.RequestScoped;
-
 /**
  * An interface that any backend storage needs to fulfill, it could be for memory, infinispan or
  * redis.
