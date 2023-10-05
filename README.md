@@ -48,6 +48,8 @@ This endpoint logs out the user and destroys the session information.
 #### /*
 This endpoint is the PDP and verifes the session information, extract the access token and refreshes it with the OIDC provider if needed. The token is also sent back in the response as an **authorization**-header and any **set-cookie**-headers with a 200 OK if it will allow it to proceed. You must not expose this endpoint to the internet, it is only meant for internal usage.
 
+It is used by the CUSTOM AuthorizationPolicy in istio, or can be used by any other way that requires a PDP.
+
 ### Runtime and development versions
 The following versions are used for runtime, development and testing. It might work perfectly fine with other versions as well but it has not been verified.
 * Keycloak 21.1.1 (keycloak-athz-client, keycloak-core)
@@ -120,7 +122,7 @@ The configuration is stored in the application.properties file.
 Contains configuration for the behaviour of the gatekeeper.
 |Property|Description|Default |
 |---|---|---|
-|oidcgk.base.url|The base url for the gatekeepe. Used e.g. when creating the callback url|None| 
+|oidcgk.base.url|The base url for the gatekeeper. Used e.g. when creating the callback url|None| 
 |oidcgk.base.aad|Additional authentication data used during encryption and decryption when storing the session in the browser.|OpenID Connect Gate Keeper Version 0.1|
 |oidcgk.base.storage|Specifies how the session information is stored. It can be either **browser**, **memory**, **redis** or **infinispan**. **browser** and **memory** do not require any additional configuration.|None|
 |oidcgk.base.storage.TTL|Specifies the time to live for the session in the backend storage in seconds.|1800|
